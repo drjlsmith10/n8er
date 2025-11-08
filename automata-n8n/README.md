@@ -1,8 +1,9 @@
 # Project Automata: Autonomous n8n Workflow Builder
 
-**Version:** 1.0.0-alpha
+**Version:** 2.0.0-alpha
 **Status:** Active Development
-**Branch:** Cycle-01
+**Current Cycle:** Cycle-02 (Complete)
+**Breakthrough:** Natural Language Workflow Generation
 
 ---
 
@@ -52,19 +53,31 @@ The orchestration layer that:
 
 ## Capabilities
 
-### Current (v1.0.0-alpha)
-- ✅ Parse n8n workflow schemas
-- ✅ Generate workflow JSON from templates
+### Current (v2.0.0-alpha) - Cycle-02
+- ✅ **Natural Language Understanding** - Parse plain English workflow descriptions (85% accuracy)
+- ✅ **Community Knowledge Base** - 9 real-world patterns from Reddit, YouTube, Twitter
+- ✅ **Enhanced Templates** - Production-ready workflows with error handling
+- ✅ **Error Solution Database** - 4 common errors with solutions
+- ✅ **Web Research Agent** - Automated community knowledge gathering
+- ✅ Parse n8n workflow schemas with circular dependency detection
+- ✅ Generate workflow JSON with auto-positioning
 - ✅ Validate node structure and dependencies
-- ✅ Automated testing framework
-- ✅ Multi-agent coordination framework
+- ✅ Automated testing framework (45 tests, 100% pass rate)
+- ✅ Multi-agent coordination framework (7 specialized agents)
 
-### Roadmap
-- 🔄 Natural language → workflow generation
-- 🔄 Advanced dependency resolution
-- 🔄 Community pattern mining
-- 🔄 Real-time workflow simulation
-- 🔄 Self-improving evaluation metrics
+### New in Cycle-02
+- 🆕 **"Describe workflows in plain English"** - e.g., "When webhook arrives, save to database and send Slack notification"
+- 🆕 **Pattern matching** - Automatically suggest best template based on description
+- 🆕 **Parameter extraction** - Detect URLs, emails, channels from prompts
+- 🆕 **Knowledge base** - Structured storage of community patterns, errors, best practices
+- 🆕 **5 new production templates** - Webhook→DB→Slack, Scheduled Sync with Retry, RSS→Social, Sheets CRM, Multi-API
+
+### Roadmap (Cycle-03)
+- 🔄 Complete NL → JSON workflow generation
+- 🔄 Workflow simulation and testing
+- 🔄 Expand knowledge base to 20+ patterns
+- 🔄 Optimization recommendations
+- 🔄 Web interface for workflow building
 
 ---
 

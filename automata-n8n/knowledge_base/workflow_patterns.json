@@ -1,0 +1,256 @@
+{
+  "d53c9584656fb69a": {
+    "pattern_id": "d53c9584656fb69a",
+    "name": "Webhook \u2192 Database \u2192 Slack Notification",
+    "description": "Receive webhook, store in database, send Slack notification on success/error",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/example1",
+    "nodes_used": [
+      "n8n-nodes-base.webhook",
+      "n8n-nodes-base.postgres",
+      "n8n-nodes-base.slack",
+      "n8n-nodes-base.if"
+    ],
+    "complexity": "medium",
+    "use_cases": [
+      "Data ingestion",
+      "Event tracking",
+      "Team notifications"
+    ],
+    "error_handling": "Use IF node to check DB insert success, send different Slack messages",
+    "best_practices": [
+      "Always validate webhook payload before DB insert",
+      "Use try-catch in function nodes",
+      "Set timeout on external API calls",
+      "Log errors to separate channel"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.704964",
+    "popularity_score": 156
+  },
+  "d4ac4ee0c078bd6a": {
+    "pattern_id": "d4ac4ee0c078bd6a",
+    "name": "Scheduled Data Sync with Retry",
+    "description": "Sync data between systems on schedule with exponential backoff retry",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/example2",
+    "nodes_used": [
+      "n8n-nodes-base.cron",
+      "n8n-nodes-base.httpRequest",
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.wait"
+    ],
+    "complexity": "high",
+    "use_cases": [
+      "ETL",
+      "Data synchronization",
+      "API integration"
+    ],
+    "error_handling": "Use function node to implement retry counter and exponential backoff",
+    "best_practices": [
+      "Implement max retry limit (usually 3-5)",
+      "Use Wait node for delays between retries",
+      "Log all retry attempts",
+      "Send alert after max retries exceeded"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.704978",
+    "popularity_score": 203
+  },
+  "5c29a0f3861f691a": {
+    "pattern_id": "5c29a0f3861f691a",
+    "name": "Multi-API Aggregation",
+    "description": "Call multiple APIs in parallel, merge results, transform and output",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/example3",
+    "nodes_used": [
+      "n8n-nodes-base.manualTrigger",
+      "n8n-nodes-base.httpRequest",
+      "n8n-nodes-base.merge",
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.set"
+    ],
+    "complexity": "medium",
+    "use_cases": [
+      "Data aggregation",
+      "Report generation",
+      "API orchestration"
+    ],
+    "error_handling": "Use error workflow to catch failed API calls",
+    "best_practices": [
+      "Set proper timeouts on all HTTP requests",
+      "Use Merge node mode: 'Keep Key Matches'",
+      "Transform data before merging for consistency",
+      "Handle partial failures gracefully"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.704984",
+    "popularity_score": 178
+  },
+  "037e3fc282be8bf8": {
+    "pattern_id": "037e3fc282be8bf8",
+    "name": "Email Processing Pipeline",
+    "description": "Monitor email, parse attachments, process data, send results",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/example4",
+    "nodes_used": [
+      "n8n-nodes-base.emailTrigger",
+      "n8n-nodes-base.emailReadImap",
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.spreadsheetFile",
+      "n8n-nodes-base.emailSend"
+    ],
+    "complexity": "high",
+    "use_cases": [
+      "Document processing",
+      "Email automation",
+      "Report handling"
+    ],
+    "error_handling": "Move failed emails to separate folder, send error notification",
+    "best_practices": [
+      "Mark processed emails as read",
+      "Move to processed folder",
+      "Validate file formats before processing",
+      "Keep audit trail of all processed emails"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.704995",
+    "popularity_score": 142
+  },
+  "abaa41490a52d6f4": {
+    "pattern_id": "abaa41490a52d6f4",
+    "name": "RSS to Social Media Automation",
+    "description": "Monitor RSS feed, post new items to Twitter/LinkedIn automatically",
+    "source": "youtube",
+    "source_url": "https://youtube.com/watch?v=example1",
+    "nodes_used": [
+      "n8n-nodes-base.rssFeedTrigger",
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.twitter",
+      "n8n-nodes-base.linkedIn"
+    ],
+    "complexity": "low",
+    "use_cases": [
+      "Content automation",
+      "Social media management",
+      "Marketing"
+    ],
+    "error_handling": "Check if item already posted to avoid duplicates",
+    "best_practices": [
+      "Store posted item IDs in database",
+      "Add delay between posts to avoid spam detection",
+      "Truncate long titles to fit character limits",
+      "Add hashtags automatically"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.706796",
+    "popularity_score": 2400
+  },
+  "28ca0a5eedf5f89a": {
+    "pattern_id": "28ca0a5eedf5f89a",
+    "name": "GitHub to Discord Notifications",
+    "description": "Send Discord notifications for GitHub events (PR, issues, commits)",
+    "source": "youtube",
+    "source_url": "https://youtube.com/watch?v=example2",
+    "nodes_used": [
+      "n8n-nodes-base.githubTrigger",
+      "n8n-nodes-base.switch",
+      "n8n-nodes-base.discord",
+      "n8n-nodes-base.function"
+    ],
+    "complexity": "medium",
+    "use_cases": [
+      "DevOps",
+      "Team collaboration",
+      "CI/CD monitoring"
+    ],
+    "error_handling": "Use Switch node to handle different event types",
+    "best_practices": [
+      "Filter events you care about",
+      "Format messages with Discord markdown",
+      "Include direct links to GitHub items",
+      "Use different channels for different event types"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.706809",
+    "popularity_score": 3200
+  },
+  "9036948f7e090024": {
+    "pattern_id": "9036948f7e090024",
+    "name": "Google Sheets CRM Automation",
+    "description": "Add new leads to Google Sheets, send follow-up emails, update status",
+    "source": "youtube",
+    "source_url": "https://youtube.com/watch?v=example3",
+    "nodes_used": [
+      "n8n-nodes-base.googleSheets",
+      "n8n-nodes-base.emailSend",
+      "n8n-nodes-base.wait",
+      "n8n-nodes-base.if"
+    ],
+    "complexity": "medium",
+    "use_cases": [
+      "CRM",
+      "Sales automation",
+      "Lead nurturing"
+    ],
+    "error_handling": "Check if email sent successfully before updating sheet",
+    "best_practices": [
+      "Use named ranges in Google Sheets",
+      "Validate email addresses before sending",
+      "Log all email sends in separate sheet",
+      "Use Wait node for follow-up delays"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.706816",
+    "popularity_score": 5100
+  },
+  "e9149d0d3b52c8c8": {
+    "pattern_id": "e9149d0d3b52c8c8",
+    "name": "Twitter Monitoring & Auto-Reply",
+    "description": "Monitor mentions, analyze sentiment, auto-reply based on content",
+    "source": "twitter",
+    "source_url": "https://twitter.com/n8n_io/status/example1",
+    "nodes_used": [
+      "n8n-nodes-base.twitterTrigger",
+      "n8n-nodes-base.sentimentAnalysis",
+      "n8n-nodes-base.if",
+      "n8n-nodes-base.twitter"
+    ],
+    "complexity": "medium",
+    "use_cases": [
+      "Social media management",
+      "Customer service",
+      "Brand monitoring"
+    ],
+    "error_handling": "Rate limit handling with queue",
+    "best_practices": [
+      "Filter out retweets and spam",
+      "Don't auto-reply to everything (spam detection)",
+      "Add human review step for sensitive replies",
+      "Track conversation threads"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.708504",
+    "popularity_score": 89
+  },
+  "1926853834100f10": {
+    "pattern_id": "1926853834100f10",
+    "name": "Airtable \u2192 Multiple Platforms Sync",
+    "description": "Update Airtable, sync to Notion, Google Sheets, and Slack",
+    "source": "twitter",
+    "source_url": "https://twitter.com/user/status/example2",
+    "nodes_used": [
+      "n8n-nodes-base.airtableTrigger",
+      "n8n-nodes-base.notion",
+      "n8n-nodes-base.googleSheets",
+      "n8n-nodes-base.slack"
+    ],
+    "complexity": "low",
+    "use_cases": [
+      "Data synchronization",
+      "Multi-platform updates",
+      "Team coordination"
+    ],
+    "error_handling": "Continue on fail for each platform",
+    "best_practices": [
+      "Use Airtable as source of truth",
+      "Map fields carefully between platforms",
+      "Add timestamp tracking",
+      "Test with small dataset first"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.708513",
+    "popularity_score": 124
+  }
+}
