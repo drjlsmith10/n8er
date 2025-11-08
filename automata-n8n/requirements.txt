@@ -1,0 +1,22 @@
+# Project Automata: Python Dependencies
+# Version: 1.0.0
+
+# Core dependencies
+python>=3.9
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Code quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# Documentation
+markdown>=3.4.0
+
+# Optional: For future enhancements
+# requests>=2.28.0  # For API calls
+# pydantic>=2.0.0   # For schema validation
+# click>=8.1.0      # For CLI interface

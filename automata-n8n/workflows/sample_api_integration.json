@@ -1,0 +1,201 @@
+{
+  "name": "API Integration with Error Handling",
+  "nodes": [
+    {
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fetch API Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        580,
+        300
+      ],
+      "parameters": {
+        "url": "https://api.example.com/data",
+        "method": "GET",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "name": "Check Response",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [
+            {
+              "value1": "={{ $json.statusCode }}",
+              "operation": "equal",
+              "value2": 200
+            }
+          ],
+          "string": []
+        }
+      }
+    },
+    {
+      "name": "Process Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        200
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "success"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        400
+      ],
+      "parameters": {
+        "url": "https://alerts.example.com/error",
+        "method": "POST",
+        "body": {
+          "error": "={{ $json.error }}",
+          "timestamp": "={{ $now.toISO() }}",
+          "workflow": "API Integration"
+        }
+      }
+    },
+    {
+      "name": "Retry Logic",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        400
+      ],
+      "parameters": {
+        "functionCode": "// Implement retry logic\nconst maxRetries = 3;\nconst currentRetry = $node[\"Fetch API Data\"].context.get('retryCount') || 0;\n\nif (currentRetry < maxRetries) {\n  $node[\"Fetch API Data\"].context.set('retryCount', currentRetry + 1);\n  return items;\n} else {\n  throw new Error('Max retries exceeded');\n}"
+      }
+    },
+    {
+      "name": "Log Success",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        200
+      ],
+      "parameters": {},
+      "notes": "Success logging endpoint"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch API Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch API Data": {
+      "main": [
+        [
+          {
+            "node": "Check Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Response": {
+      "main": [
+        [
+          {
+            "node": "Process Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Success": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alert": {
+      "main": [
+        [
+          {
+            "node": "Retry Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "createdAt": "2025-11-08T01:34:00.000Z",
+  "updatedAt": "2025-11-08T01:34:00.000Z",
+  "tags": [
+    "api",
+    "error-handling",
+    "retry",
+    "scheduled"
+  ]
+}
