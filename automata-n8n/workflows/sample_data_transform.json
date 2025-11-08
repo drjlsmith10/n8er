@@ -1,0 +1,130 @@
+{
+  "name": "API Data Transform Pipeline",
+  "nodes": [
+    {
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        580,
+        300
+      ],
+      "parameters": {
+        "url": "https://api.github.com/repos/n8n-io/n8n/issues",
+        "method": "GET",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ],
+      "parameters": {
+        "functionCode": "// Transform GitHub issues data\nconst transformedItems = [];\n\nfor (const item of items) {\n  transformedItems.push({\n    json: {\n      issue_id: item.json.id,\n      title: item.json.title,\n      state: item.json.state,\n      created: item.json.created_at,\n      author: item.json.user.login,\n      labels: item.json.labels.map(l => l.name)\n    }\n  });\n}\n\nreturn transformedItems;"
+      }
+    },
+    {
+      "name": "Filter Open Issues",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [],
+          "string": [
+            {
+              "value1": "={{ $json.state }}",
+              "operation": "equal",
+              "value2": "open"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Store Results",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        300
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Transform Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Data": {
+      "main": [
+        [
+          {
+            "node": "Filter Open Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Open Issues": {
+      "main": [
+        [
+          {
+            "node": "Store Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "createdAt": "2025-11-08T01:34:00.000Z",
+  "updatedAt": "2025-11-08T01:34:00.000Z",
+  "tags": [
+    "api",
+    "transform",
+    "github",
+    "etl"
+  ]
+}

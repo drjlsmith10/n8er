@@ -1,0 +1,57 @@
+{
+  "name": "Webhook to Email Notification",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "path": "alert-webhook",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        580,
+        300
+      ],
+      "parameters": {
+        "toEmail": "admin@example.com",
+        "subject": "Alert: Webhook Received",
+        "text": "=Webhook received with data: {{ $json }}",
+        "fromEmail": "noreply@automata.com"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "createdAt": "2025-11-08T01:34:00.000Z",
+  "updatedAt": "2025-11-08T01:34:00.000Z",
+  "tags": [
+    "webhook",
+    "notification",
+    "email"
+  ]
+}

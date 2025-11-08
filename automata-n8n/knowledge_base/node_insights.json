@@ -1,0 +1,52 @@
+{
+  "n8n-nodes-base.httpRequest": {
+    "node_type": "n8n-nodes-base.httpRequest",
+    "common_use_cases": [
+      "API calls",
+      "Webhooks to external services",
+      "Data fetching",
+      "Triggering external workflows"
+    ],
+    "common_parameters": {
+      "method": "GET/POST most common",
+      "authentication": "Bearer Token or API Key",
+      "timeout": "10000-30000ms recommended"
+    },
+    "common_errors": [
+      "CORS errors (use proxy)",
+      "Timeout errors (increase timeout)",
+      "401 Unauthorized (check credentials)"
+    ],
+    "tips": [
+      "Always set timeout to prevent hanging",
+      "Use response format 'autodetect' for flexibility",
+      "Test with Postman first",
+      "Log request/response for debugging"
+    ],
+    "source_count": 10
+  },
+  "n8n-nodes-base.function": {
+    "node_type": "n8n-nodes-base.function",
+    "common_use_cases": [
+      "Data transformation",
+      "Complex logic",
+      "Calculations",
+      "Custom parsing"
+    ],
+    "common_parameters": {
+      "functionCode": "JavaScript ES6 supported"
+    },
+    "common_errors": [
+      "Syntax errors (test code separately)",
+      "Undefined variable (check $json structure)",
+      "Memory issues (process in batches)"
+    ],
+    "tips": [
+      "Return array of items: [{json: {}}]",
+      "Access input with $input.item.json",
+      "Use console.log for debugging (shows in logs)",
+      "Keep functions simple, split complex logic"
+    ],
+    "source_count": 15
+  }
+}

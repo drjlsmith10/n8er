@@ -1,0 +1,45 @@
+# Project Automata: Production Dependencies
+# Version: 2.0.0-alpha
+
+# Core dependencies
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Code quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# CLI
+click>=8.1.0
+
+# HTTP requests (for real API integration in future)
+requests>=2.28.0
+
+# Documentation
+markdown>=3.4.0
+
+# Optional: API integrations (install separately if needed)
+# praw>=7.7.0  # Reddit API
+# google-api-python-client>=2.0.0  # YouTube API
+# tweepy>=4.0.0  # Twitter API
+# PyGithub>=1.59.0  # GitHub API
+
+# Optional: Web interface (future)
+# fastapi>=0.100.0
+# uvicorn>=0.23.0
+# jinja2>=3.1.0
+
+# Optional: Database (future)
+# sqlalchemy>=2.0.0
+# alembic>=1.11.0
+
+# Optional: Monitoring (future)
+# prometheus-client>=0.17.0
+# sentry-sdk>=1.28.0

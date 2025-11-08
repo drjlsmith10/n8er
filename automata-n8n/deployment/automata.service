@@ -1,0 +1,40 @@
+[Unit]
+Description=Project Automata - Autonomous n8n Workflow Builder
+After=network.target
+Documentation=https://github.com/drjlsmith10/n8er
+
+[Service]
+Type=simple
+User=automata
+Group=automata
+WorkingDirectory=/opt/automata-n8n
+Environment="PATH=/opt/automata-n8n/venv/bin"
+EnvironmentFile=/opt/automata-n8n/.env
+
+# Main service command
+ExecStart=/opt/automata-n8n/venv/bin/python scripts/run_web_research.py
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/automata-n8n/knowledge_base /opt/automata-n8n/workflows /opt/automata-n8n/logs
+
+# Resource limits
+MemoryLimit=1G
+CPUQuota=100%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=automata
+
+[Install]
+WantedBy=multi-user.target

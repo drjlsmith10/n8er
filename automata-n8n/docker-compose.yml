@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  automata:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: project-automata:2.0.0-alpha
+    container_name: automata
+    volumes:
+      # Persist knowledge base, workflows, and logs
+      - ./knowledge_base:/app/knowledge_base
+      - ./workflows:/app/workflows
+      - ./logs:/app/logs
+      # Mount environment configuration
+      - ./.env:/app/.env:ro
+    environment:
+      # Override environment variables here if needed
+      - ENVIRONMENT=production
+      - DEBUG=false
+    restart: unless-stopped
+    networks:
+      - automata-network
+    # Uncomment to limit resources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+
+  # Optional: n8n instance for workflow testing
+  # n8n:
+  #   image: n8nio/n8n:latest
+  #   container_name: n8n
+  #   ports:
+  #     - "5678:5678"
+  #   volumes:
+  #     - n8n_data:/home/node/.n8n
+  #   environment:
+  #     - N8N_BASIC_AUTH_ACTIVE=true
+  #     - N8N_BASIC_AUTH_USER=admin
+  #     - N8N_BASIC_AUTH_PASSWORD=change_this_password
+  #   restart: unless-stopped
+  #   networks:
+  #     - automata-network
+
+networks:
+  automata-network:
+    driver: bridge
+
+volumes:
+  n8n_data:

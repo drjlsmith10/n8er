@@ -1,0 +1,55 @@
+{
+  "b9e550be85343c40": {
+    "error_id": "b9e550be85343c40",
+    "error_type": "Webhook timeout",
+    "error_message": "Webhook request timed out",
+    "context": "Long-running workflow triggered by webhook",
+    "solution": "Set webhook to 'Respond Immediately' and process asynchronously. Use Queue node for long operations.",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/error1",
+    "nodes_affected": [
+      "n8n-nodes-base.webhook"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.705002"
+  },
+  "04993ff993bf04ac": {
+    "error_id": "04993ff993bf04ac",
+    "error_type": "Memory exhaustion",
+    "error_message": "JavaScript heap out of memory",
+    "context": "Processing large datasets in Function node",
+    "solution": "Split data into batches using SplitInBatches node. Process smaller chunks instead of entire dataset.",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/error2",
+    "nodes_affected": [
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.code"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.705007"
+  },
+  "5fe0d2b187d3eca9": {
+    "error_id": "5fe0d2b187d3eca9",
+    "error_type": "Rate limiting",
+    "error_message": "429 Too Many Requests",
+    "context": "Making rapid API calls in loop",
+    "solution": "Add Wait node between iterations. Use rate limiter pattern with counter and delay.",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/error3",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.705012"
+  },
+  "8720442a7db276b6": {
+    "error_id": "8720442a7db276b6",
+    "error_type": "Credentials not found",
+    "error_message": "Could not find credentials",
+    "context": "Workflow imported from another instance",
+    "solution": "Re-create credentials in new instance. Cannot export actual credentials for security.",
+    "source": "reddit",
+    "source_url": "https://reddit.com/r/n8n/comments/error4",
+    "nodes_affected": [
+      "*"
+    ],
+    "discovered_date": "2025-11-08T02:58:06.705021"
+  }
+}
