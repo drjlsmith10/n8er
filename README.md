@@ -1,2 +1,2 @@
-# n8er
-n8n architect
+# Automata-n8n
+n8n architect using Claude. 
