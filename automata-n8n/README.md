@@ -1,9 +1,17 @@
 # Project Automata: Autonomous n8n Workflow Builder
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![CI/CD](https://github.com/drjlsmith10/n8er/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/drjlsmith10/n8er/actions)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 **Version:** 2.0.0-alpha
-**Status:** Active Development
+**Status:** Open Source & Active Development
 **Current Cycle:** Cycle-02 (Complete)
 **Breakthrough:** Natural Language Workflow Generation
+
+> 🌟 **Now Open Source!** We're building the future of AI-assisted workflow automation together. [Star us on GitHub](https://github.com/drjlsmith10/n8er) to follow our progress!
 
 ---
 
@@ -87,14 +95,27 @@ The orchestration layer that:
 
 ```bash
 # Clone repository
-git clone <repo-url>
-cd automata-n8n
+git clone https://github.com/drjlsmith10/n8er.git
+cd n8er/automata-n8n
 
-# Install dependencies
+# Install package and dependencies
+pip install -e ".[dev]"
+
+# Or just dependencies
 pip install -r requirements.txt
-# or
-npm install
 ```
+
+### Configuration
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit with your API keys (all free tiers available)
+nano .env
+```
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed setup instructions.
 
 ### Generate a Workflow
 
@@ -141,7 +162,49 @@ Each cycle:
 
 ## Contributing
 
-This is an autonomous research project. The system self-improves through meta-evaluation cycles documented in `docs/changelog.md` and `docs/eval_report.md`.
+We welcome contributions from the community! Project Automata thrives on collaboration and continuous improvement.
+
+### Ways to Contribute
+
+- 🐛 **Report Bugs** - Found an issue? [Open a bug report](https://github.com/drjlsmith10/n8er/issues/new?template=bug_report.md)
+- 💡 **Suggest Features** - Have an idea? [Submit a feature request](https://github.com/drjlsmith10/n8er/issues/new?template=feature_request.md)
+- 🔧 **Submit Code** - Read our [Contributing Guidelines](CONTRIBUTING.md) and submit a PR
+- 📖 **Improve Docs** - Help make our documentation clearer
+- 🧪 **Share Workflows** - Contribute real-world n8n patterns to our knowledge base
+- 💬 **Help Others** - Answer questions in Discussions
+
+### Getting Started
+
+1. Read the [Contributing Guidelines](CONTRIBUTING.md)
+2. Check out [Good First Issues](https://github.com/drjlsmith10/n8er/labels/good%20first%20issue)
+3. Join our community discussions
+4. Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+
+### Development Process
+
+The system self-improves through meta-evaluation cycles documented in `docs/changelog.md` and `docs/eval_report.md`. Every contribution goes through:
+
+1. Automated testing (45+ tests)
+2. Code quality checks (Black, Flake8, mypy)
+3. Security scanning
+4. Community review
+
+---
+
+## Community & Support
+
+- 📚 **Documentation**: [docs/](docs/)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/drjlsmith10/n8er/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/drjlsmith10/n8er/discussions)
+- 🔒 **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting
+
+### Show Your Support
+
+If Project Automata is useful to you:
+
+⭐ **Star this repository** to show your support
+🐦 **Share on Twitter** to help others discover it
+🤝 **Contribute** to make it even better
 
 ---
 
