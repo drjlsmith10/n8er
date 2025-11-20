@@ -1,0 +1,62 @@
+{
+  "id": "email-db-001",
+  "name": "Email to Database Workflow",
+  "description": "Extract data from incoming emails and store in database",
+  "nodes": [
+    {
+      "name": "Email Trigger",
+      "type": "n8n-nodes-base.emailTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "pollTimes": ["every5m"]
+      }
+    },
+    {
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [580, 300],
+      "parameters": {
+        "functionCode": "const emailBody = $input.all()[0].json.body;\nconst subject = $input.all()[0].json.subject;\nconst from = $input.all()[0].json.from;\n\nreturn [{\n  json: {\n    email_subject: subject,\n    email_from: from,\n    email_body: emailBody,\n    received_at: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "name": "Store in Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "parameters": {
+        "operation": "insert",
+        "table": "emails",
+        "columnString": "subject, from_email, body, received_at",
+        "valueString": "={{ $json.email_subject }}, {{ $json.email_from }}, {{ $json.email_body }}, {{ $json.received_at }}"
+      }
+    }
+  ],
+  "connections": {
+    "Email Trigger": {
+      "main": [[{ "node": "Extract Data", "type": "main", "index": 0 }]]
+    },
+    "Extract Data": {
+      "main": [[{ "node": "Store in Database", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "email-db-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-003"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["email", "database", "data-extraction", "automation"]
+}

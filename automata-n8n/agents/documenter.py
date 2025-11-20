@@ -11,9 +11,10 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, List
-from agents import BaseAgent, AgentTask, AgentResult
 from datetime import datetime
+from typing import Dict
+
+from agents import AgentResult, AgentTask, BaseAgent
 
 
 class DocumenterAgent(BaseAgent):
@@ -58,7 +59,7 @@ class DocumenterAgent(BaseAgent):
                 success=True,
                 output=result,
                 reasoning=f"Documentation task completed: {task.task_type}",
-                metrics={"documents_created": result.get("doc_count", 1)}
+                metrics={"documents_created": result.get("doc_count", 1)},
             )
 
         except Exception as e:
@@ -70,7 +71,7 @@ class DocumenterAgent(BaseAgent):
                 output=None,
                 reasoning=f"Documentation error: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _generate_docs(self, params: Dict) -> Dict:
@@ -122,7 +123,7 @@ See the examples directory for usage examples.
             "documentation": documentation,
             "doc_type": doc_type,
             "source": source,
-            "doc_count": 1
+            "doc_count": 1,
         }
 
     def _update_changelog(self, params: Dict) -> Dict:
@@ -153,7 +154,7 @@ See the examples directory for usage examples.
             "changelog_entry": changelog_entry,
             "version": version,
             "change_count": len(changes),
-            "doc_count": 1
+            "doc_count": 1,
         }
 
     def _create_diagram(self, params: Dict) -> Dict:
@@ -198,7 +199,7 @@ graph LR
             "diagram": diagram,
             "diagram_type": diagram_type,
             "format": "mermaid",
-            "doc_count": 1
+            "doc_count": 1,
         }
 
     def _create_eval_report(self, params: Dict) -> Dict:
@@ -272,12 +273,7 @@ core skills, agent framework, and documentation infrastructure.
 *Approved by: Automata-Prime*
 """
 
-        return {
-            "report": report,
-            "cycle": cycle,
-            "format": "markdown",
-            "doc_count": 1
-        }
+        return {"report": report, "cycle": cycle, "format": "markdown", "doc_count": 1}
 
 
 if __name__ == "__main__":
@@ -288,12 +284,8 @@ if __name__ == "__main__":
         task_type="eval_report",
         parameters={
             "cycle": 1,
-            "metrics": {
-                "schema_validity": 92,
-                "doc_coverage": 100,
-                "test_pass_rate": 95
-            }
-        }
+            "metrics": {"schema_validity": 92, "doc_coverage": 100, "test_pass_rate": 95},
+        },
     )
 
     result = agent.execute(task)

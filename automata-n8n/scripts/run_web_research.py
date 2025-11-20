@@ -9,14 +9,14 @@ Author: Project Automata - Cycle 02
 Version: 2.0.0
 """
 
-import sys
 import os
+import sys
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from agents.web_researcher import WebResearcherAgent
 from agents import AgentTask
+from agents.web_researcher import WebResearcherAgent
 from skills.knowledge_base import KnowledgeBase
 
 
@@ -29,12 +29,33 @@ def main():
     print("=" * 70)
     print()
 
+    # Check if running in simulation mode
+    from config import Config
+
+    if not Config.ENABLE_WEB_RESEARCH:
+        print("⚠️" * 35)
+        print()
+        print("   🔴 SIMULATION MODE ACTIVE 🔴")
+        print()
+        print("   All data is SIMULATED - not from real API calls")
+        print("   This uses curated sample data for development/testing")
+        print()
+        print("   To use REAL data from APIs:")
+        print("   1. Set API keys in .env file")
+        print("   2. Set ENABLE_WEB_RESEARCH=true")
+        print()
+        print("⚠️" * 35)
+        print()
+
     # Initialize knowledge base and agent
     kb = KnowledgeBase()
     agent = WebResearcherAgent(knowledge_base=kb)
 
     print(f"📚 Knowledge Base: {kb.base_dir}")
     print(f"🤖 Agent: {agent.name}")
+    print(
+        f"🔧 Mode: {'SIMULATION (Sample Data)' if not Config.ENABLE_WEB_RESEARCH else 'PRODUCTION (Real APIs)'}"
+    )
     print()
 
     # Phase 1: Reddit Research
@@ -46,12 +67,8 @@ def main():
         task_id="research_reddit_001",
         task_type="research_reddit",
         parameters={
-            "queries": [
-                "n8n workflow examples",
-                "n8n error handling",
-                "n8n best practices"
-            ]
-        }
+            "queries": ["n8n workflow examples", "n8n error handling", "n8n best practices"]
+        },
     )
 
     print("🔍 Mining Reddit for n8n workflows and solutions...")
@@ -61,9 +78,9 @@ def main():
         print(f"✅ {reddit_result.output['summary']}")
         print(f"   - Patterns: {reddit_result.output['patterns_found']}")
         print(f"   - Errors: {reddit_result.output['errors_found']}")
-        for finding in reddit_result.output['findings'][:5]:
+        for finding in reddit_result.output["findings"][:5]:
             print(f"   • {finding}")
-        if len(reddit_result.output['findings']) > 5:
+        if len(reddit_result.output["findings"]) > 5:
             print(f"   • ... and {len(reddit_result.output['findings']) - 5} more")
     else:
         print(f"❌ Reddit research failed: {reddit_result.reasoning}")
@@ -76,9 +93,7 @@ def main():
     print("=" * 70)
 
     youtube_task = AgentTask(
-        task_id="research_youtube_001",
-        task_type="research_youtube",
-        parameters={}
+        task_id="research_youtube_001", task_type="research_youtube", parameters={}
     )
 
     print("🎥 Analyzing YouTube n8n tutorials...")
@@ -88,9 +103,9 @@ def main():
         print(f"✅ {youtube_result.output['summary']}")
         print(f"   - Patterns: {youtube_result.output['patterns_found']}")
         print(f"   - Insights: {youtube_result.output['insights_found']}")
-        for finding in youtube_result.output['findings'][:5]:
+        for finding in youtube_result.output["findings"][:5]:
             print(f"   • {finding}")
-        if len(youtube_result.output['findings']) > 5:
+        if len(youtube_result.output["findings"]) > 5:
             print(f"   • ... and {len(youtube_result.output['findings']) - 5} more")
     else:
         print(f"❌ YouTube research failed: {youtube_result.reasoning}")
@@ -103,9 +118,7 @@ def main():
     print("=" * 70)
 
     twitter_task = AgentTask(
-        task_id="research_twitter_001",
-        task_type="research_twitter",
-        parameters={}
+        task_id="research_twitter_001", task_type="research_twitter", parameters={}
     )
 
     print("🐦 Monitoring Twitter/X for n8n tips and patterns...")
@@ -115,9 +128,9 @@ def main():
         print(f"✅ {twitter_result.output['summary']}")
         print(f"   - Patterns: {twitter_result.output['patterns_found']}")
         print(f"   - Tips: {twitter_result.output['tips_found']}")
-        for finding in twitter_result.output['findings'][:5]:
+        for finding in twitter_result.output["findings"][:5]:
             print(f"   • {finding}")
-        if len(twitter_result.output['findings']) > 5:
+        if len(twitter_result.output["findings"]) > 5:
             print(f"   • ... and {len(twitter_result.output['findings']) - 5} more")
     else:
         print(f"❌ Twitter research failed: {twitter_result.reasoning}")
@@ -129,11 +142,7 @@ def main():
     print("PHASE 4: KNOWLEDGE ANALYSIS")
     print("=" * 70)
 
-    analysis_task = AgentTask(
-        task_id="analyze_001",
-        task_type="analyze_gathered",
-        parameters={}
-    )
+    analysis_task = AgentTask(task_id="analyze_001", task_type="analyze_gathered", parameters={})
 
     print("📊 Analyzing gathered knowledge...")
     analysis_result = agent.execute(analysis_task)
@@ -148,15 +157,15 @@ def main():
         print(f"   - Total Insights: {analysis['total_insights']}")
         print()
         print("🌐 SOURCES:")
-        for source, count in analysis['sources'].items():
+        for source, count in analysis["sources"].items():
             print(f"   - {source.capitalize()}: {count} patterns")
         print()
         print("🔝 TOP NODES:")
-        for i, (node, count) in enumerate(analysis['top_nodes'][:5], 1):
+        for i, (node, count) in enumerate(analysis["top_nodes"][:5], 1):
             print(f"   {i}. {node}: {count} uses")
         print()
         print("📊 COMPLEXITY:")
-        for complexity, count in analysis['complexity_distribution'].items():
+        for complexity, count in analysis["complexity_distribution"].items():
             print(f"   - {complexity.capitalize()}: {count} patterns")
     else:
         print(f"❌ Analysis failed: {analysis_result.reasoning}")
@@ -171,8 +180,8 @@ def main():
     print(kb.export_summary())
 
     # Save summary to file
-    summary_path = os.path.join(kb.base_dir, 'summary.md')
-    with open(summary_path, 'w') as f:
+    summary_path = os.path.join(kb.base_dir, "summary.md")
+    with open(summary_path, "w") as f:
         f.write(kb.export_summary())
     print(f"📄 Summary saved to: {summary_path}")
 

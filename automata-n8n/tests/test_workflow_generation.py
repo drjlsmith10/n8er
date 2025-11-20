@@ -7,18 +7,18 @@ Author: Project Automata - Tester Agent
 Version: 1.0.0
 """
 
-import pytest
-import sys
 import os
-import json
+import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import pytest
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from skills.generate_workflow_json import (
-        WorkflowBuilder,
         TemplateLibrary,
-        generate_from_template
+        WorkflowBuilder,
+        generate_from_template,
     )
 except ImportError:
     pytest.skip("generate_workflow_json module not available", allow_module_level=True)
@@ -37,11 +37,7 @@ class TestWorkflowBuilder:
     def test_add_node(self):
         """Test adding a node"""
         builder = WorkflowBuilder("Test")
-        builder.add_node(
-            "n8n-nodes-base.manualTrigger",
-            "Start",
-            parameters={}
-        )
+        builder.add_node("n8n-nodes-base.manualTrigger", "Start", parameters={})
 
         assert len(builder.nodes) == 1
         assert builder.nodes[0]["name"] == "Start"
@@ -122,8 +118,7 @@ class TestTemplateLibrary:
     def test_webhook_to_email_template(self):
         """Test webhook to email template generation"""
         workflow = TemplateLibrary.webhook_to_email(
-            webhook_path="test-webhook",
-            email_to="test@example.com"
+            webhook_path="test-webhook", email_to="test@example.com"
         )
 
         assert workflow["name"] == "Webhook to Email"
@@ -133,8 +128,7 @@ class TestTemplateLibrary:
     def test_http_request_transform_template(self):
         """Test HTTP request + transform template"""
         workflow = TemplateLibrary.http_request_transform(
-            url="https://api.example.com/data",
-            method="GET"
+            url="https://api.example.com/data", method="GET"
         )
 
         assert workflow["name"] == "HTTP Request + Transform"
@@ -164,9 +158,7 @@ class TestTemplateGeneration:
     def test_generate_from_template_webhook_email(self):
         """Test generating from webhook_email template"""
         workflow = generate_from_template(
-            "webhook_email",
-            webhook_path="alerts",
-            email_to="admin@example.com"
+            "webhook_email", webhook_path="alerts", email_to="admin@example.com"
         )
 
         assert workflow is not None
@@ -232,6 +224,7 @@ class TestWorkflowIntegration:
         # Parse it back
         try:
             from skills.parse_n8n_schema import parse_workflow_json
+
             parsed = parse_workflow_json(workflow, strict=False)
 
             assert parsed is not None
@@ -239,6 +232,115 @@ class TestWorkflowIntegration:
             assert len(parsed.connections) == 1
         except ImportError:
             pytest.skip("parse_n8n_schema not available")
+
+
+class TestWorkflowSchemaFields:
+    """Test suite for new n8n 1.60+ workflow schema fields"""
+
+    def test_workflow_has_id_field(self):
+        """Test that generated workflows include id field"""
+        builder = WorkflowBuilder("Schema Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "id" in workflow
+        assert workflow["id"] is not None
+        assert len(workflow["id"]) > 0  # Should be a UUID
+
+    def test_workflow_has_version_id_field(self):
+        """Test that generated workflows include versionId field"""
+        builder = WorkflowBuilder("Schema Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "versionId" in workflow
+        assert workflow["versionId"] is not None
+        assert len(workflow["versionId"]) > 0  # Should be a UUID
+
+    def test_workflow_has_meta_field(self):
+        """Test that generated workflows include meta field"""
+        builder = WorkflowBuilder("Schema Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "meta" in workflow
+        assert isinstance(workflow["meta"], dict)
+        assert "templateCredsSetupCompleted" in workflow["meta"]
+        assert "instanceId" in workflow["meta"]
+
+    def test_workflow_has_pin_data_field(self):
+        """Test that generated workflows include pinData field"""
+        builder = WorkflowBuilder("Schema Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "pinData" in workflow
+        assert isinstance(workflow["pinData"], dict)
+
+    def test_workflow_has_static_data_field(self):
+        """Test that generated workflows include staticData field"""
+        builder = WorkflowBuilder("Schema Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "staticData" in workflow
+        assert isinstance(workflow["staticData"], dict)
+
+    def test_workflow_settings_complete(self):
+        """Test that workflow settings include all recommended fields"""
+        builder = WorkflowBuilder("Settings Test")
+        builder.add_trigger("manual", "Start")
+        workflow = builder.build(validate=False)
+
+        assert "settings" in workflow
+        settings = workflow["settings"]
+
+        # Check all recommended settings are present
+        assert "executionOrder" in settings
+        assert "saveExecutionProgress" in settings
+        assert "saveManualExecutions" in settings
+        assert "timezone" in settings
+        assert "callerPolicy" in settings
+
+    def test_workflow_settings_values(self):
+        """Test that workflow settings have correct default values"""
+        builder = WorkflowBuilder("Settings Test")
+        workflow = builder.build(validate=False)
+
+        settings = workflow["settings"]
+        assert settings["executionOrder"] == "v1"
+        assert settings["saveExecutionProgress"] == False
+        assert settings["saveManualExecutions"] == True
+        assert settings["timezone"] == "UTC"
+        assert settings["callerPolicy"] == "workflowsFromSameOwner"
+
+    def test_node_type_version_can_be_set(self):
+        """Test that nodes can have custom typeVersion"""
+        builder = WorkflowBuilder("Type Version Test")
+        builder.add_node(
+            "n8n-nodes-base.emailSend",
+            "Email Node",
+            type_version=2,
+            parameters={"fromEmail": "test@example.com"}
+        )
+        workflow = builder.build(validate=False)
+
+        assert workflow["nodes"][0]["typeVersion"] == 2
+
+    def test_multiple_workflows_have_unique_ids(self):
+        """Test that each workflow gets unique IDs"""
+        builder1 = WorkflowBuilder("Workflow 1")
+        builder1.add_trigger("manual", "Start")
+        workflow1 = builder1.build(validate=False)
+
+        builder2 = WorkflowBuilder("Workflow 2")
+        builder2.add_trigger("manual", "Start")
+        workflow2 = builder2.build(validate=False)
+
+        # Each workflow should have different IDs
+        assert workflow1["id"] != workflow2["id"]
+        assert workflow1["versionId"] != workflow2["versionId"]
+        assert workflow1["meta"]["instanceId"] != workflow2["meta"]["instanceId"]
 
 
 # Run tests

@@ -1,0 +1,97 @@
+{
+  "id": "github-issues-001",
+  "name": "GitHub Issue Tracker",
+  "description": "Monitor GitHub repository issues and create notifications for new issues",
+  "nodes": [
+    {
+      "name": "Check for New Issues",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "expression": "0 */2 * * *",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "name": "List Issues",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [580, 300],
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_OWNER }}/{{ $env.GITHUB_REPO }}/issues",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GITHUB_TOKEN }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Filter New Issues",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [
+            {
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 3,
+      "position": [1260, 300],
+      "parameters": {
+        "channel": "#github-alerts",
+        "messageType": "text",
+        "text": "=New GitHub Issue: {{ $json.title }}\nCreated by: {{ $json.user.login }}\nLink: {{ $json.html_url }}"
+      }
+    }
+  ],
+  "connections": {
+    "Check for New Issues": {
+      "main": [[{ "node": "List Issues", "type": "main", "index": 0 }]]
+    },
+    "List Issues": {
+      "main": [[{ "node": "Filter New Issues", "type": "main", "index": 0 }]]
+    },
+    "Filter New Issues": {
+      "main": [[{ "node": "Send Notification", "type": "main", "index": 0 }], []]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "github-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-002"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["github", "issues", "monitoring", "notifications"]
+}

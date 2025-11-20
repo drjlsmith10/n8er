@@ -7,21 +7,22 @@ Author: Project Automata - Tester Agent
 Version: 1.0.0
 """
 
-import pytest
-import sys
-import os
 import json
+import os
+import sys
+
+import pytest
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from skills.parse_n8n_schema import (
+        N8nConnection,
+        N8nNode,
         N8nSchemaParser,
         parse_workflow_file,
         parse_workflow_json,
-        N8nNode,
-        N8nConnection
     )
 except ImportError:
     pytest.skip("parse_n8n_schema module not available", allow_module_level=True)
@@ -47,10 +48,10 @@ class TestN8nSchemaParser:
                     "type": "n8n-nodes-base.manualTrigger",
                     "typeVersion": 1,
                     "position": [240, 300],
-                    "parameters": {}
+                    "parameters": {},
                 }
             ],
-            "connections": {}
+            "connections": {},
         }
 
         parser = N8nSchemaParser(strict_mode=False)
@@ -63,9 +64,7 @@ class TestN8nSchemaParser:
 
     def test_parse_missing_nodes_field(self):
         """Test parsing workflow without nodes field"""
-        workflow = {
-            "name": "Invalid Workflow"
-        }
+        workflow = {"name": "Invalid Workflow"}
 
         parser = N8nSchemaParser(strict_mode=True)
         result = parser.parse_json(workflow)
@@ -81,7 +80,7 @@ class TestN8nSchemaParser:
             type="n8n-nodes-base.webhook",
             type_version=1,
             position=(100, 100),
-            parameters={}
+            parameters={},
         )
 
         assert node.is_trigger() == True
@@ -96,29 +95,19 @@ class TestN8nSchemaParser:
                     "type": "n8n-nodes-base.manualTrigger",
                     "typeVersion": 1,
                     "position": [240, 300],
-                    "parameters": {}
+                    "parameters": {},
                 },
                 {
                     "name": "Action",
                     "type": "n8n-nodes-base.noOp",
                     "typeVersion": 1,
                     "position": [580, 300],
-                    "parameters": {}
-                }
+                    "parameters": {},
+                },
             ],
             "connections": {
-                "Trigger": {
-                    "main": [
-                        [
-                            {
-                                "node": "Action",
-                                "type": "main",
-                                "index": 0
-                            }
-                        ]
-                    ]
-                }
-            }
+                "Trigger": {"main": [[{"node": "Action", "type": "main", "index": 0}]]}
+            },
         }
 
         parser = N8nSchemaParser(strict_mode=False)
@@ -134,15 +123,33 @@ class TestN8nSchemaParser:
         workflow = {
             "name": "Circular Workflow",
             "nodes": [
-                {"name": "A", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0], "parameters": {}},
-                {"name": "B", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [100, 0], "parameters": {}},
-                {"name": "C", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [200, 0], "parameters": {}}
+                {
+                    "name": "A",
+                    "type": "n8n-nodes-base.manualTrigger",
+                    "typeVersion": 1,
+                    "position": [0, 0],
+                    "parameters": {},
+                },
+                {
+                    "name": "B",
+                    "type": "n8n-nodes-base.noOp",
+                    "typeVersion": 1,
+                    "position": [100, 0],
+                    "parameters": {},
+                },
+                {
+                    "name": "C",
+                    "type": "n8n-nodes-base.noOp",
+                    "typeVersion": 1,
+                    "position": [200, 0],
+                    "parameters": {},
+                },
             ],
             "connections": {
                 "A": {"main": [[{"node": "B", "type": "main", "index": 0}]]},
                 "B": {"main": [[{"node": "C", "type": "main", "index": 0}]]},
-                "C": {"main": [[{"node": "B", "type": "main", "index": 0}]]}  # Creates cycle
-            }
+                "C": {"main": [[{"node": "B", "type": "main", "index": 0}]]},  # Creates cycle
+            },
         }
 
         parser = N8nSchemaParser(strict_mode=False)
@@ -157,11 +164,29 @@ class TestN8nSchemaParser:
         workflow = {
             "name": "Multi-Trigger Workflow",
             "nodes": [
-                {"name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "position": [0, 0], "parameters": {}},
-                {"name": "Cron", "type": "n8n-nodes-base.cron", "typeVersion": 1, "position": [0, 100], "parameters": {}},
-                {"name": "Action", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [200, 0], "parameters": {}}
+                {
+                    "name": "Webhook",
+                    "type": "n8n-nodes-base.webhook",
+                    "typeVersion": 1,
+                    "position": [0, 0],
+                    "parameters": {},
+                },
+                {
+                    "name": "Cron",
+                    "type": "n8n-nodes-base.cron",
+                    "typeVersion": 1,
+                    "position": [0, 100],
+                    "parameters": {},
+                },
+                {
+                    "name": "Action",
+                    "type": "n8n-nodes-base.noOp",
+                    "typeVersion": 1,
+                    "position": [200, 0],
+                    "parameters": {},
+                },
             ],
-            "connections": {}
+            "connections": {},
         }
 
         parser = N8nSchemaParser(strict_mode=False)
@@ -178,7 +203,7 @@ class TestWorkflowParsing:
 
     def test_parse_sample_workflows(self):
         """Test parsing all sample workflows"""
-        workflow_dir = os.path.join(os.path.dirname(__file__), '..', 'workflows')
+        workflow_dir = os.path.join(os.path.dirname(__file__), "..", "workflows")
 
         if not os.path.exists(workflow_dir):
             pytest.skip("Workflow directory not found")
@@ -186,7 +211,7 @@ class TestWorkflowParsing:
         sample_files = [
             "sample_webhook_email.json",
             "sample_data_transform.json",
-            "sample_api_integration.json"
+            "sample_api_integration.json",
         ]
 
         for filename in sample_files:
@@ -208,7 +233,7 @@ class TestNodeClassification:
             type="n8n-nodes-base.webhook",
             type_version=1,
             position=(0, 0),
-            parameters={}
+            parameters={},
         )
         assert node.is_trigger() == True
 
@@ -220,7 +245,7 @@ class TestNodeClassification:
             type="n8n-nodes-base.httpRequest",
             type_version=1,
             position=(0, 0),
-            parameters={}
+            parameters={},
         )
         assert node.is_trigger() == False
 
@@ -237,10 +262,10 @@ def valid_workflow():
                 "type": "n8n-nodes-base.manualTrigger",
                 "typeVersion": 1,
                 "position": [240, 300],
-                "parameters": {}
+                "parameters": {},
             }
         ],
-        "connections": {}
+        "connections": {},
     }
 
 

@@ -11,9 +11,10 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, List
-from agents import BaseAgent, AgentTask, AgentResult
 from datetime import datetime
+from typing import Dict
+
+from agents import AgentResult, AgentTask, BaseAgent
 
 
 class ProjectManagerAgent(BaseAgent):
@@ -59,7 +60,7 @@ class ProjectManagerAgent(BaseAgent):
                 success=True,
                 output=result,
                 reasoning=f"PM task completed: {task.task_type}",
-                metrics={"items_planned": result.get("item_count", 0)}
+                metrics={"items_planned": result.get("item_count", 0)},
             )
 
         except Exception as e:
@@ -71,7 +72,7 @@ class ProjectManagerAgent(BaseAgent):
                 output=None,
                 reasoning=f"PM error: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _plan_cycle(self, params: Dict) -> Dict:
@@ -91,11 +92,12 @@ class ProjectManagerAgent(BaseAgent):
             "cycle": cycle_num,
             "start_date": datetime.utcnow().isoformat(),
             "duration": "1 week",
-            "goals": goals or [
+            "goals": goals
+            or [
                 "Enhance workflow generation capabilities",
                 "Improve test coverage",
                 "Expand template library",
-                "Optimize performance"
+                "Optimize performance",
             ],
             "tasks": [
                 {
@@ -103,43 +105,43 @@ class ProjectManagerAgent(BaseAgent):
                     "title": "Implement NL prompt parser",
                     "agent": "Engineer",
                     "priority": "high",
-                    "estimated_effort": "2 days"
+                    "estimated_effort": "2 days",
                 },
                 {
                     "id": f"C{cycle_num:02d}-T002",
                     "title": "Add 5 new workflow templates",
                     "agent": "Researcher",
                     "priority": "medium",
-                    "estimated_effort": "1 day"
+                    "estimated_effort": "1 day",
                 },
                 {
                     "id": f"C{cycle_num:02d}-T003",
                     "title": "Expand test suite coverage to 90%",
                     "agent": "Tester",
                     "priority": "high",
-                    "estimated_effort": "2 days"
+                    "estimated_effort": "2 days",
                 },
                 {
                     "id": f"C{cycle_num:02d}-T004",
                     "title": "Validate all generated workflows",
                     "agent": "Validator",
                     "priority": "high",
-                    "estimated_effort": "1 day"
+                    "estimated_effort": "1 day",
                 },
                 {
                     "id": f"C{cycle_num:02d}-T005",
                     "title": "Update documentation",
                     "agent": "Documenter",
                     "priority": "medium",
-                    "estimated_effort": "0.5 days"
-                }
+                    "estimated_effort": "0.5 days",
+                },
             ],
             "success_criteria": [
                 "All high-priority tasks completed",
                 "Test pass rate ≥ 95%",
                 "No critical bugs",
-                "Documentation up to date"
-            ]
+                "Documentation up to date",
+            ],
         }
 
         self.cycles.append(plan)
@@ -169,7 +171,7 @@ class ProjectManagerAgent(BaseAgent):
                 "code_quality": 88,
                 "test_coverage": 85,
                 "documentation_completeness": 100,
-                "bug_count": 2
+                "bug_count": 2,
             },
             "agent_utilization": {
                 "Researcher": "80%",
@@ -177,15 +179,15 @@ class ProjectManagerAgent(BaseAgent):
                 "Validator": "70%",
                 "Tester": "85%",
                 "Documenter": "90%",
-                "ProjectManager": "60%"
+                "ProjectManager": "60%",
             },
             "risks": [
                 {
                     "description": "Test coverage below target",
                     "severity": "medium",
-                    "mitigation": "Allocate more Tester resources"
+                    "mitigation": "Allocate more Tester resources",
                 }
-            ]
+            ],
         }
 
         return {**progress, "item_count": progress["tasks_completed"] + progress["tasks_remaining"]}
@@ -224,7 +226,7 @@ class ProjectManagerAgent(BaseAgent):
             "new_version": new_version,
             "bump_type": bump_type,
             "release_notes": f"Version {new_version} - {bump_type.capitalize()} update",
-            "item_count": 1
+            "item_count": 1,
         }
 
     def _prioritize_tasks(self, params: Dict) -> Dict:
@@ -260,10 +262,7 @@ class ProjectManagerAgent(BaseAgent):
             if effort == "low":
                 score += 3
 
-            prioritized.append({
-                **task,
-                "priority_score": score
-            })
+            prioritized.append({**task, "priority_score": score})
 
         # Sort by score
         prioritized.sort(key=lambda x: x["priority_score"], reverse=True)
@@ -271,18 +270,14 @@ class ProjectManagerAgent(BaseAgent):
         return {
             "prioritized_tasks": prioritized,
             "item_count": len(prioritized),
-            "criteria": ["impact", "effort", "dependencies", "urgency"]
+            "criteria": ["impact", "effort", "dependencies", "urgency"],
         }
 
 
 if __name__ == "__main__":
     agent = ProjectManagerAgent()
 
-    task = AgentTask(
-        task_id="pm_001",
-        task_type="plan_cycle",
-        parameters={"cycle": 2}
-    )
+    task = AgentTask(task_id="pm_001", task_type="plan_cycle", parameters={"cycle": 2})
 
     result = agent.execute(task)
     print(f"PM Result: {result.success}")

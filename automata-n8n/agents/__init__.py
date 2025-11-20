@@ -8,22 +8,20 @@ Version: 1.0.0
 Created: 2025-11-08
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List
-from dataclasses import dataclass
 import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
 @dataclass
 class AgentTask:
     """Standardized task input for agents"""
+
     task_id: str
     task_type: str
     parameters: Dict[str, Any]
@@ -34,6 +32,7 @@ class AgentTask:
 @dataclass
 class AgentResult:
     """Standardized result output from agents"""
+
     task_id: str
     agent_name: str
     success: bool
@@ -88,7 +87,7 @@ class BaseAgent(ABC):
         reasoning: str,
         metrics: Dict[str, Any] = None,
         errors: List[str] = None,
-        warnings: List[str] = None
+        warnings: List[str] = None,
     ) -> AgentResult:
         """Helper to create standardized results"""
         return AgentResult(
@@ -100,7 +99,7 @@ class BaseAgent(ABC):
             metrics=metrics or {},
             timestamp=datetime.utcnow().isoformat() + "Z",
             errors=errors or [],
-            warnings=warnings or []
+            warnings=warnings or [],
         )
 
     def update_stats(self, success: bool) -> None:
@@ -113,15 +112,12 @@ class BaseAgent(ABC):
 
     def get_performance(self) -> Dict[str, Any]:
         """Get agent performance metrics"""
-        success_rate = (
-            (self.success_count / self.task_count * 100)
-            if self.task_count > 0 else 0
-        )
+        success_rate = (self.success_count / self.task_count * 100) if self.task_count > 0 else 0
 
         return {
             "agent": self.name,
             "tasks_completed": self.task_count,
             "successes": self.success_count,
             "errors": self.error_count,
-            "success_rate": f"{success_rate:.1f}%"
+            "success_rate": f"{success_rate:.1f}%",
         }

@@ -1,0 +1,89 @@
+{
+  "id": "rss-agg-001",
+  "name": "RSS Feed Aggregator",
+  "description": "Aggregate RSS feeds and send daily digests",
+  "nodes": [
+    {
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "expression": "0 8 * * *",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "name": "Fetch Tech News",
+      "type": "n8n-nodes-base.rssFeedTrigger",
+      "typeVersion": 1,
+      "position": [580, 300],
+      "parameters": {
+        "url": "https://feeds.arstechnica.com/arstechnica/index",
+        "pollTimes": ["every30m"]
+      }
+    },
+    {
+      "name": "Fetch Dev News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [920, 200],
+      "parameters": {
+        "url": "https://news.ycombinator.com/rss",
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Format Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 400],
+      "parameters": {
+        "functionCode": "const articles = $input.all();\nconst formatted = articles.map((item, idx) => {\n  return `${idx + 1}. ${item.json.title}\\n   Link: ${item.json.link}\\n`;\n}).join('\\n');\n\nreturn [{ json: { digest: formatted, count: articles.length } }];"
+      }
+    },
+    {
+      "name": "Send Email Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1260, 300],
+      "parameters": {
+        "fromEmail": "news-digest@automation.com",
+        "toEmail": "subscribers@example.com",
+        "subject": "Daily Tech & Dev News Digest",
+        "message": "=Here are today's top stories:\\n\\n{{ $json.digest }}\\n\\nTotal articles: {{ $json.count }}"
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule": {
+      "main": [[{ "node": "Fetch Tech News", "type": "main", "index": 0 }]]
+    },
+    "Fetch Tech News": {
+      "main": [[{ "node": "Fetch Dev News", "type": "main", "index": 0 }]]
+    },
+    "Fetch Dev News": {
+      "main": [[{ "node": "Format Digest", "type": "main", "index": 0 }]]
+    },
+    "Format Digest": {
+      "main": [[{ "node": "Send Email Digest", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "rss-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-009"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["rss", "content-aggregation", "scheduled", "email"]
+}

@@ -253,6 +253,156 @@ Automata-Prime ──> Evaluate cycle, trigger refinements
 
 ---
 
+## n8n Node Coverage
+
+### Currently Supported Nodes (v2.0.0-alpha)
+
+Project Automata currently has deep integration and template support for **5 core n8n nodes**:
+
+| Node Type | Purpose | Template Support | Knowledge Base |
+|-----------|---------|------------------|----------------|
+| `n8n-nodes-base.webhook` | HTTP webhook trigger | ✅ Full | Extensive |
+| `n8n-nodes-base.httpRequest` | External API calls | ✅ Full | Extensive |
+| `n8n-nodes-base.function` | JavaScript code execution | ✅ Full | Extensive |
+| `n8n-nodes-base.if` | Conditional branching | ✅ Full | Moderate |
+| `n8n-nodes-base.slack` | Slack notifications | ✅ Full | Moderate |
+
+### Additional Nodes with Partial Support
+
+The following nodes are referenced in templates but lack comprehensive documentation:
+
+| Node Type | Status | Priority |
+|-----------|--------|----------|
+| `n8n-nodes-base.postgres` | Used in templates | HIGH |
+| `n8n-nodes-base.cron` | Used in templates | HIGH |
+| `n8n-nodes-base.wait` | Used in templates | MEDIUM |
+| `n8n-nodes-base.emailSend` | Used in templates | HIGH |
+| `n8n-nodes-base.merge` | Used in templates | MEDIUM |
+| `n8n-nodes-base.googleSheets` | Used in templates | HIGH |
+| `n8n-nodes-base.twitter` | Used in templates | LOW |
+| `n8n-nodes-base.linkedIn` | Used in templates | LOW |
+
+### Node Coverage Statistics
+
+- **Total n8n Core Nodes:** 400+ available
+- **Nodes with Full Support:** 5 (1.25%)
+- **Nodes with Partial Support:** 8 (2%)
+- **Target for v3.0:** 50+ nodes (12.5%)
+
+### Expansion Roadmap
+
+#### Phase 1: Core Integration Nodes (High Priority)
+**Target:** Cycle-03 (Q1 2025)
+
+Essential nodes for common workflow patterns:
+
+1. **Database Nodes**
+   - PostgreSQL, MySQL, MongoDB
+   - Redis, Elasticsearch
+   - Priority: CRITICAL - enables data persistence
+
+2. **Communication Nodes**
+   - Email (Send/Read)
+   - Discord, Telegram
+   - Priority: HIGH - common in automation workflows
+
+3. **Data Transformation**
+   - Code, Set, Item Lists
+   - Split In Batches, Aggregate
+   - Priority: HIGH - fundamental data operations
+
+4. **Cloud Storage**
+   - Google Drive, Dropbox, S3
+   - Priority: MEDIUM - file handling capabilities
+
+#### Phase 2: Business Automation Nodes (Medium Priority)
+**Target:** Cycle-04 (Q2 2025)
+
+Productivity and business tools:
+
+1. **Productivity Suites**
+   - Google Workspace (Sheets, Docs, Calendar)
+   - Microsoft 365 (Excel, Outlook, Teams)
+   - Notion, Airtable
+
+2. **CRM & Sales**
+   - Salesforce, HubSpot, Pipedrive
+   - Zendesk, Intercom
+
+3. **Project Management**
+   - Jira, Trello, Asana
+   - GitHub, GitLab
+
+#### Phase 3: AI/ML & Advanced Integration (Low Priority)
+**Target:** Cycle-05+ (Q3 2025)
+
+Specialized and emerging nodes:
+
+1. **AI/ML Services**
+   - OpenAI, Anthropic (Claude)
+   - HuggingFace, Stability AI
+   - Vector databases (Pinecone, Weaviate)
+
+2. **Cloud Providers**
+   - AWS (Lambda, S3, DynamoDB)
+   - GCP, Azure services
+
+3. **Specialized Services**
+   - Payment gateways (Stripe, PayPal)
+   - Analytics (Google Analytics, Mixpanel)
+   - Social media platforms
+
+### Node Support Requirements
+
+For a node to achieve "Full Support" status:
+
+1. **Template Library**
+   - At least 2 workflow templates using the node
+   - Cover common use cases
+   - Include error handling patterns
+
+2. **Knowledge Base**
+   - Common parameters documented
+   - Known errors and solutions cataloged
+   - Best practices and tips collected
+
+3. **Test Coverage**
+   - Unit tests for node parameter generation
+   - Integration tests with real n8n
+   - Validation tests for common patterns
+
+4. **Documentation**
+   - Node usage guide in EXPRESSION_SYNTAX.md or dedicated file
+   - Examples in workflow samples
+   - Troubleshooting section
+
+### Community Contributions
+
+We welcome contributions to expand node coverage:
+
+1. **Share Workflows:** Submit real-world examples using nodes
+2. **Document Patterns:** Contribute best practices and error solutions
+3. **Write Templates:** Create reusable workflow patterns
+4. **Test Integration:** Validate node compatibility with current n8n versions
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for details on adding node support.
+
+### Node Type Version Tracking
+
+**Important:** n8n nodes have version numbers (typeVersion) that affect compatibility:
+
+| Node | Current typeVersion | Automata Support | Notes |
+|------|---------------------|------------------|-------|
+| webhook | 1.0 | ✅ v1 | Version 2.0 adds authentication options |
+| httpRequest | 4.x | ⚠️ v1 | Need to update to v4 (see CRITICAL_REVIEW.md #1) |
+| function | 1.0 | ✅ v1 | Stable across versions |
+| if | 1.0 | ✅ v1 | Version 2.0 changes condition structure |
+| slack | 2.x | ⚠️ v1 | Need to update to v2 |
+
+**Action Item:** Cycle-03 will address typeVersion updates for all supported nodes.
+
+---
+
 ## Security & Best Practices
 
 1. **Schema Validation:** All workflows validated before output

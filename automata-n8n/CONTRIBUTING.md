@@ -283,25 +283,109 @@ Closes #123
 Related to #456
 ```
 
-### Review Process
+### Detailed Code Review Process
 
-1. **Automated checks** run (tests, linting)
-2. **Maintainer review** (1-3 days typically)
-3. **Feedback** may be provided
-4. **Iteration** if changes requested
-5. **Merge** when approved
+Our code review process ensures quality, maintainability, and consistency:
+
+#### 1. Automated Checks (Pre-Review)
+Before any human review, automated checks must pass:
+- **Tests**: `pytest tests/ -v` must pass all tests
+- **Code Style**: `black .` and `flake8 .` must have 0 issues
+- **Type Hints**: `mypy skills/ agents/` must pass
+- **Coverage**: New code should not decrease coverage below 85%
+
+```bash
+# Run all checks locally before pushing
+pytest tests/ -v
+black . && isort .
+flake8 .
+mypy skills/ agents/
+```
+
+#### 2. Initial Triage
+Maintainers review PR for:
+- Clear PR description and title
+- Linked related issues
+- Appropriate branch name
+- Commit messages follow conventions
+
+**Expected Response:** 24-48 hours
+
+#### 3. Code Review
+Reviewer checks for:
+- **Correctness**: Does the code solve the stated problem?
+- **Design**: Is the solution well-architected?
+- **Performance**: Are there performance implications?
+- **Security**: Are there potential security issues?
+- **Testing**: Is coverage adequate?
+- **Documentation**: Is it documented?
+- **Style**: Does it follow project conventions?
+
+**Review Comments:**
+- **MUST**: Critical issues that block merge
+- **SHOULD**: Strong recommendations
+- **NICE**: Suggestions for future improvement
+
+#### 4. Iteration
+Author addresses feedback:
+- Push commits to same branch
+- Reply to each comment
+- Request re-review when complete
+
+**No force-push** after review has started (makes conversation hard to follow)
+
+#### 5. Approval and Merge
+Once approved:
+- At least 1 approval required for bug fixes
+- At least 2 approvals required for features
+- All conversations must be resolved
+- All checks must pass
+- Branch must be up-to-date with main
+
+Maintainers will merge once criteria met.
+
+**Typical Timeline:**
+- Simple fixes: 1-2 days
+- Medium features: 2-5 days
+- Complex features: 5-10 days
 
 ---
 
 ## 🧪 Testing Guidelines
 
-### Test Requirements
+### Mandatory Test Requirements
 
-- All new features must include tests
-- Bug fixes should include regression tests
-- Aim for >80% code coverage
-- Tests should be fast (<1 second each)
-- Tests should be isolated and repeatable
+**All contributions MUST pass these requirements:**
+
+#### 1. Test Coverage
+- **New features**: Must include tests with >85% line coverage
+- **Bug fixes**: Must include regression test preventing re-occurrence
+- **Overall project**: Must not decrease coverage below 85%
+- **Critical paths**: Must have 95%+ coverage
+
+#### 2. Test Types Required
+- **Unit tests**: Test individual functions/methods
+- **Integration tests**: Test component interactions
+- **Regression tests**: Prevent fixes from breaking again
+- **Edge case tests**: Handle boundary conditions
+
+#### 3. Test Quality Standards
+- Each test should be <20 lines of code
+- Test should have single clear assertion (or related assertions)
+- No dependencies between tests (can run in any order)
+- Deterministic (same input = same output)
+- Fast (most tests <100ms)
+- Clear, descriptive names: `test_<function>_<scenario>_<expected_result>`
+
+**Good test names:**
+- ✅ `test_parse_workflow_valid_json_returns_parsed_workflow`
+- ✅ `test_generate_workflow_with_zero_nodes_raises_error`
+- ✅ `test_knowledge_base_lookup_missing_pattern_returns_none`
+
+**Bad test names:**
+- ❌ `test_parse`
+- ❌ `test_error`
+- ❌ `test_1`
 
 ### Test Structure
 
@@ -321,8 +405,8 @@ def test_feature_name():
 ### Running Tests
 
 ```bash
-# All tests
-pytest
+# All tests (must pass before PR submission)
+pytest tests/ -v
 
 # Specific file
 pytest tests/test_schema_validation.py
@@ -330,8 +414,9 @@ pytest tests/test_schema_validation.py
 # Specific test
 pytest tests/test_schema_validation.py::test_valid_workflow
 
-# With coverage
-pytest --cov=skills --cov-report=html
+# With coverage report
+pytest tests/ --cov=skills --cov=agents --cov-report=html
+# Coverage report will be in htmlcov/index.html
 
 # Fast tests only
 pytest -m "not slow"
@@ -339,9 +424,27 @@ pytest -m "not slow"
 # Verbose output
 pytest -v
 
-# Stop on first failure
+# Stop on first failure (useful for debugging)
 pytest -x
+
+# Run with warnings
+pytest --tb=short
+
+# See which tests are slowest
+pytest --durations=10
 ```
+
+### Test Requirements Checklist
+
+Before submitting a PR, verify:
+- [ ] All tests pass: `pytest tests/ -v`
+- [ ] Coverage is adequate: `pytest --cov=skills --cov-report=term-missing`
+- [ ] No coverage regression (coverage % doesn't decrease)
+- [ ] All new functions have tests
+- [ ] All edge cases are covered
+- [ ] Test names are descriptive
+- [ ] Tests are isolated (no dependencies)
+- [ ] Tests are deterministic (reproducible results)
 
 ---
 
@@ -559,16 +662,170 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 📅 Release Process
 
+### Semantic Versioning
+
 Releases follow [Semantic Versioning](https://semver.org/):
 
-- **Major** (X.0.0) - Breaking changes
+- **Major** (X.0.0) - Breaking changes (rare, careful consideration)
 - **Minor** (0.X.0) - New features, backwards compatible
-- **Patch** (0.0.X) - Bug fixes
+- **Patch** (0.0.X) - Bug fixes and security patches
 
 **Release schedule:**
-- Patch releases: As needed
-- Minor releases: Monthly
-- Major releases: When necessary
+- Patch releases: As needed for bugs/security
+- Minor releases: Monthly (typically first week)
+- Major releases: When necessary (1-2 per year)
+
+### How to Bump Versions
+
+Maintainers handle version bumping, but you should know the process:
+
+#### 1. Update Version Numbers
+Update version in these files:
+```bash
+# Main version file
+# Edit: setup.py
+# Change: version="X.Y.Z"
+
+# Python package versions
+# Edit: skills/__init__.py, agents/__init__.py, config.py
+# Change: __version__ = "X.Y.Z"
+
+# Docker
+# Edit: Dockerfile
+# Add label: LABEL version="X.Y.Z"
+
+# Documentation
+# Edit: README.md, QUICKSTART.md
+# Update any references to version numbers
+```
+
+#### 2. Update Changelog
+Create entry in `docs/changelog.md`:
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- New features here
+
+### Changed
+- Changes here
+
+### Fixed
+- Bug fixes here
+
+### Security
+- Security patches here
+```
+
+#### 3. Create Git Tag
+```bash
+git tag -a vX.Y.Z -m "Release version X.Y.Z"
+git push origin vX.Y.Z
+```
+
+#### 4. Create GitHub Release
+- Go to GitHub Releases
+- Create new release from tag
+- Add changelog entry as description
+- Attach any binary artifacts
+
+#### 5. Update Documentation
+- Update deployment guides if needed
+- Add release notes
+- Update compatibility matrix
+
+### Testing Before Release
+Before releasing, verify:
+- [ ] All tests pass: `pytest tests/ -v`
+- [ ] No critical issues in linting
+- [ ] Documentation is updated
+- [ ] Changelog is complete
+- [ ] Version numbers are consistent
+- [ ] Build succeeds: `python setup.py build`
+- [ ] Docker image builds successfully
+- [ ] No regressions vs previous version
+
+### Documentation Requirements
+
+#### For Code Changes
+**All code PRs must include documentation:**
+
+1. **Docstrings** (Google format)
+   - All public functions/classes must have docstrings
+   - Include Args, Returns, Raises sections
+   - Add examples for complex functions
+
+2. **Code Comments**
+   - Complex logic needs inline comments
+   - Non-obvious decisions should be explained
+   - WHY, not WHAT (what is obvious from code)
+
+3. **README Updates**
+   - If new user-facing feature, update README.md
+   - Add to features list if applicable
+   - Update quick start if needed
+
+4. **Architecture Updates**
+   - If changing system design, update docs/architecture.md
+   - Include diagrams if helpful
+   - Document new modules/classes
+
+5. **API Documentation**
+   - If adding new skills/agents, document API
+   - Include usage examples
+   - Document parameters and return values
+
+#### For Feature Contributions
+**Feature PRs need comprehensive documentation:**
+
+1. **QUICKSTART.md Update**
+   - Add example of using new feature
+   - Keep it brief (5 minutes max)
+
+2. **docs/DEPLOYMENT.md Update**
+   - If feature affects deployment, document it
+   - Add configuration options
+   - Include troubleshooting
+
+3. **Example Workflows**
+   - Add workflow example for new capability
+   - Place in `workflows/examples/`
+   - Include explanatory comments
+
+#### For Bug Fix Contributions
+**Bug fixes need:**
+1. Test case demonstrating the bug
+2. Comment explaining fix
+3. Changelog entry
+
+### Documentation Format Standards
+
+**Use Markdown for all documentation:**
+```markdown
+# Heading 1 (one per file)
+
+## Heading 2 (main sections)
+
+### Heading 3 (subsections)
+
+**Bold** for emphasis
+`code` for inline code
+```code block```  for multi-line code
+- Lists for non-ordered items
+1. Numbered lists for steps
+[Link text](URL) for links
+```
+
+**Code Examples:**
+- Include import statements
+- Should be runnable/complete
+- Use realistic examples
+- Include expected output
+
+**Diagrams:**
+- Use ASCII diagrams for simple flows
+- Consider using Mermaid for complex diagrams
+- Always have alt text describing diagram
 
 ---
 

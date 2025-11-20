@@ -1,7 +1,7 @@
 # Project Automata: Docker Image
 # Version: 2.0.0-alpha
 
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 LABEL maintainer="Project Automata Team"
 LABEL version="2.0.0-alpha"

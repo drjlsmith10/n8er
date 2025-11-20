@@ -11,10 +11,9 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, List, Any
-import json
-import re
-from agents import BaseAgent, AgentTask, AgentResult
+from typing import Dict
+
+from agents import AgentResult, AgentTask, BaseAgent
 
 
 class ResearcherAgent(BaseAgent):
@@ -57,7 +56,7 @@ class ResearcherAgent(BaseAgent):
                 success=True,
                 output=result,
                 reasoning=f"Successfully completed {task.task_type}",
-                metrics={"items_processed": len(result.get("items", []))}
+                metrics={"items_processed": len(result.get("items", []))},
             )
 
         except Exception as e:
@@ -69,7 +68,7 @@ class ResearcherAgent(BaseAgent):
                 output=None,
                 reasoning=f"Research failed: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _mine_documentation(self, params: Dict) -> Dict:
@@ -90,24 +89,21 @@ class ResearcherAgent(BaseAgent):
                 "common_params": {
                     "path": "webhook-path",
                     "httpMethod": "POST",
-                    "responseMode": "onReceived"
-                }
+                    "responseMode": "onReceived",
+                },
             },
             {
                 "name": "http_request",
                 "description": "External API call pattern",
                 "nodes": ["n8n-nodes-base.httpRequest"],
-                "common_params": {
-                    "method": "GET",
-                    "responseFormat": "json"
-                }
+                "common_params": {"method": "GET", "responseFormat": "json"},
             },
             {
                 "name": "data_transform",
                 "description": "Data transformation pattern",
                 "nodes": ["n8n-nodes-base.function", "n8n-nodes-base.set"],
-                "common_params": {}
-            }
+                "common_params": {},
+            },
         ]
 
         self.patterns.extend(patterns)
@@ -128,26 +124,26 @@ class ResearcherAgent(BaseAgent):
                 "pattern": "Trigger → Action",
                 "description": "Simple trigger-action workflow",
                 "use_cases": ["Webhook notifications", "Scheduled tasks"],
-                "complexity": "low"
+                "complexity": "low",
             },
             {
                 "pattern": "Trigger → Transform → Action",
                 "description": "ETL-style workflow",
                 "use_cases": ["Data pipelines", "API integrations"],
-                "complexity": "medium"
+                "complexity": "medium",
             },
             {
                 "pattern": "Trigger → Branch → Merge",
                 "description": "Conditional execution flow",
                 "use_cases": ["Error handling", "Multi-path processing"],
-                "complexity": "medium"
+                "complexity": "medium",
             },
             {
                 "pattern": "Trigger → Loop → Aggregate → Action",
                 "description": "Batch processing workflow",
                 "use_cases": ["Bulk operations", "Report generation"],
-                "complexity": "high"
-            }
+                "complexity": "high",
+            },
         ]
 
         return {"patterns": common_patterns, "count": len(common_patterns)}
@@ -170,7 +166,7 @@ class ResearcherAgent(BaseAgent):
                 "required_params": ["path"],
                 "optional_params": ["httpMethod", "responseMode", "responseData"],
                 "outputs": 1,
-                "credentials": []
+                "credentials": [],
             },
             "n8n-nodes-base.httpRequest": {
                 "category": "action",
@@ -178,7 +174,7 @@ class ResearcherAgent(BaseAgent):
                 "required_params": ["url"],
                 "optional_params": ["method", "authentication", "headers", "body"],
                 "outputs": 1,
-                "credentials": ["httpBasicAuth", "httpHeaderAuth"]
+                "credentials": ["httpBasicAuth", "httpHeaderAuth"],
             },
             "n8n-nodes-base.function": {
                 "category": "transform",
@@ -186,14 +182,11 @@ class ResearcherAgent(BaseAgent):
                 "required_params": ["functionCode"],
                 "optional_params": [],
                 "outputs": 1,
-                "credentials": []
-            }
+                "credentials": [],
+            },
         }
 
-        summary = node_summaries.get(
-            node_type,
-            {"error": f"Node type not found: {node_type}"}
-        )
+        summary = node_summaries.get(node_type, {"error": f"Node type not found: {node_type}"})
 
         return {"node_type": node_type, "summary": summary}
 
@@ -202,7 +195,7 @@ class ResearcherAgent(BaseAgent):
         return {
             "patterns_learned": len(self.patterns),
             "knowledge_entries": len(self.knowledge_base),
-            "agent_performance": self.get_performance()
+            "agent_performance": self.get_performance(),
         }
 
 
@@ -210,11 +203,7 @@ if __name__ == "__main__":
     # Test the researcher agent
     agent = ResearcherAgent()
 
-    task = AgentTask(
-        task_id="research_001",
-        task_type="find_patterns",
-        parameters={}
-    )
+    task = AgentTask(task_id="research_001", task_type="find_patterns", parameters={})
 
     result = agent.execute(task)
     print(f"Research Result: {result.success}")

@@ -11,12 +11,13 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, List
-from agents import BaseAgent, AgentTask, AgentResult
-import sys
 import os
+import sys
+from typing import Dict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from agents import AgentResult, AgentTask, BaseAgent
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class ValidatorAgent(BaseAgent):
@@ -60,8 +61,8 @@ class ValidatorAgent(BaseAgent):
                 reasoning=f"Validation completed: {result['summary']}",
                 metrics={
                     "errors": len(result.get("errors", [])),
-                    "warnings": len(result.get("warnings", []))
-                }
+                    "warnings": len(result.get("warnings", [])),
+                },
             )
 
         except Exception as e:
@@ -73,7 +74,7 @@ class ValidatorAgent(BaseAgent):
                 output=None,
                 reasoning=f"Validation error: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _validate_workflow(self, params: Dict) -> Dict:
@@ -134,7 +135,7 @@ class ValidatorAgent(BaseAgent):
             "warnings": warnings,
             "summary": f"{'Valid' if valid else 'Invalid'} - {len(errors)} errors, {len(warnings)} warnings",
             "node_count": len(nodes),
-            "connection_count": len(connections)
+            "connection_count": len(connections),
         }
 
     def _validate_schema(self, params: Dict) -> Dict:
@@ -158,14 +159,14 @@ class ValidatorAgent(BaseAgent):
                     "valid": True,
                     "errors": [],
                     "warnings": [],
-                    "summary": "Schema validation passed"
+                    "summary": "Schema validation passed",
                 }
             else:
                 return {
                     "valid": False,
                     "errors": ["Schema validation failed"],
                     "warnings": [],
-                    "summary": "Schema validation failed"
+                    "summary": "Schema validation failed",
                 }
 
         except ImportError:
@@ -174,7 +175,7 @@ class ValidatorAgent(BaseAgent):
                 "valid": True,
                 "errors": [],
                 "warnings": ["Schema parser not available"],
-                "summary": "Schema validation skipped"
+                "summary": "Schema validation skipped",
             }
 
     def _validate_connections(self, params: Dict) -> Dict:
@@ -214,7 +215,7 @@ class ValidatorAgent(BaseAgent):
             "valid": valid,
             "errors": errors,
             "warnings": warnings,
-            "summary": f"Connection validation: {len(errors)} errors"
+            "summary": f"Connection validation: {len(errors)} errors",
         }
 
 
@@ -225,15 +226,19 @@ if __name__ == "__main__":
     test_workflow = {
         "name": "Test",
         "nodes": [
-            {"name": "Start", "type": "n8n-nodes-base.manualTrigger", "position": [0, 0], "parameters": {}, "typeVersion": 1}
+            {
+                "name": "Start",
+                "type": "n8n-nodes-base.manualTrigger",
+                "position": [0, 0],
+                "parameters": {},
+                "typeVersion": 1,
+            }
         ],
-        "connections": {}
+        "connections": {},
     }
 
     task = AgentTask(
-        task_id="val_001",
-        task_type="validate_workflow",
-        parameters={"workflow": test_workflow}
+        task_id="val_001", task_type="validate_workflow", parameters={"workflow": test_workflow}
     )
 
     result = agent.execute(task)

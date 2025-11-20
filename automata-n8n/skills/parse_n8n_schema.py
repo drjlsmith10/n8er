@@ -11,20 +11,18 @@ Created: 2025-11-08
 
 import json
 import logging
-from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Dict, List, Optional, Set, Tuple
 
 # Configure logging for reasoning traces
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
 class NodeType(Enum):
     """n8n node categories for classification"""
+
     TRIGGER = "trigger"
     ACTION = "regular"
     WEBHOOK = "webhook"
@@ -39,6 +37,7 @@ class N8nNode:
 
     Reasoning: Structured representation enables easy validation and manipulation
     """
+
     id: str
     name: str
     type: str
@@ -52,18 +51,18 @@ class N8nNode:
     def is_trigger(self) -> bool:
         """Check if node is a trigger type"""
         # Reasoning: Triggers typically start with specific prefixes or have webhook in name
-        trigger_indicators = ['trigger', 'webhook', 'cron', 'manual']
+        trigger_indicators = ["trigger", "webhook", "cron", "manual"]
         return any(indicator in self.type.lower() for indicator in trigger_indicators)
 
     def get_node_category(self) -> NodeType:
         """Classify node into functional category"""
         if self.is_trigger():
             return NodeType.TRIGGER
-        elif 'webhook' in self.type.lower():
+        elif "webhook" in self.type.lower():
             return NodeType.WEBHOOK
-        elif any(t in self.type.lower() for t in ['set', 'function', 'code', 'item']):
+        elif any(t in self.type.lower() for t in ["set", "function", "code", "item"]):
             return NodeType.TRANSFORM
-        elif any(t in self.type.lower() for t in ['if', 'switch', 'merge', 'split']):
+        elif any(t in self.type.lower() for t in ["if", "switch", "merge", "split"]):
             return NodeType.LOGIC
         else:
             return NodeType.ACTION
@@ -76,10 +75,11 @@ class N8nConnection:
 
     Reasoning: Explicit connection tracking enables dependency resolution and flow validation
     """
+
     source_node: str
     target_node: str
     source_output: int = 0  # Output index from source
-    target_input: int = 0   # Input index to target
+    target_input: int = 0  # Input index to target
 
     def __repr__(self) -> str:
         return f"{self.source_node}[{self.source_output}] → {self.target_node}[{self.target_input}]"
@@ -88,6 +88,7 @@ class N8nConnection:
 @dataclass
 class WorkflowMetadata:
     """Workflow-level metadata and settings"""
+
     name: str = "Untitled Workflow"
     active: bool = False
     created_at: Optional[str] = None
@@ -104,6 +105,7 @@ class ParsedWorkflow:
     This is the primary output of the parser, containing all extracted information
     in a structured, validated format ready for further processing.
     """
+
     metadata: WorkflowMetadata
     nodes: Dict[str, N8nNode]
     connections: List[N8nConnection]
@@ -224,10 +226,10 @@ class N8nSchemaParser:
         Returns:
             ParsedWorkflow object or None if parsing fails
         """
-        logger.info(f"Parsing workflow file: {filepath}")
+        logger.debug(f"Parsing workflow file: {filepath}")
 
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 workflow_json = json.load(f)
             return self.parse_json(workflow_json)
         except FileNotFoundError:
@@ -247,7 +249,7 @@ class N8nSchemaParser:
         Returns:
             ParsedWorkflow object or None if parsing fails
         """
-        logger.info("Parsing workflow JSON")
+        logger.debug("Parsing workflow JSON")
 
         # Reset error/warning state
         self.errors = []
@@ -268,7 +270,7 @@ class N8nSchemaParser:
             nodes=nodes,
             connections=connections,
             raw_json=workflow_json,
-            node_count=len(nodes)
+            node_count=len(nodes),
         )
 
         # Compute derived properties
@@ -285,7 +287,7 @@ class N8nSchemaParser:
                 logger.error(f"  - {error}")
             return None
 
-        logger.info(f"Successfully parsed workflow: {metadata.name} ({len(nodes)} nodes)")
+        logger.debug(f"Successfully parsed workflow: {metadata.name} ({len(nodes)} nodes)")
         return parsed
 
     def _validate_basic_structure(self, workflow_json: Dict) -> bool:
@@ -294,14 +296,14 @@ class N8nSchemaParser:
 
         Reasoning: Early validation prevents cascading errors
         """
-        required_fields = ['nodes']
+        required_fields = ["nodes"]
 
         for field in required_fields:
             if field not in workflow_json:
                 self._handle_error(f"Missing required field: {field}")
                 return False
 
-        if not isinstance(workflow_json['nodes'], list):
+        if not isinstance(workflow_json["nodes"], list):
             self._handle_error("'nodes' must be a list")
             return False
 
@@ -309,14 +311,42 @@ class N8nSchemaParser:
 
     def _extract_metadata(self, workflow_json: Dict) -> WorkflowMetadata:
         """Extract workflow-level metadata"""
-        return WorkflowMetadata(
-            name=workflow_json.get('name', 'Untitled Workflow'),
-            active=workflow_json.get('active', False),
-            created_at=workflow_json.get('createdAt'),
-            updated_at=workflow_json.get('updatedAt'),
-            tags=workflow_json.get('tags', []),
-            settings=workflow_json.get('settings', {})
+        metadata = WorkflowMetadata(
+            name=workflow_json.get("name", "Untitled Workflow"),
+            active=workflow_json.get("active", False),
+            created_at=workflow_json.get("createdAt"),
+            updated_at=workflow_json.get("updatedAt"),
+            tags=workflow_json.get("tags", []),
+            settings=workflow_json.get("settings", {}),
         )
+
+        # Validate new required fields (n8n 1.60+)
+        if "id" not in workflow_json:
+            self._handle_warning("Missing workflow 'id' field (required in n8n 1.60+)")
+
+        if "versionId" not in workflow_json:
+            self._handle_warning("Missing workflow 'versionId' field (required in n8n 1.60+)")
+
+        if "meta" not in workflow_json:
+            self._handle_warning("Missing workflow 'meta' field (recommended for n8n 1.60+)")
+
+        # Validate settings completeness
+        recommended_settings = [
+            "executionOrder",
+            "saveExecutionProgress",
+            "saveManualExecutions",
+            "timezone",
+            "callerPolicy",
+        ]
+        missing_settings = [
+            s for s in recommended_settings if s not in workflow_json.get("settings", {})
+        ]
+        if missing_settings:
+            self._handle_warning(
+                f"Workflow settings missing recommended fields: {', '.join(missing_settings)}"
+            )
+
+        return metadata
 
     def _extract_nodes(self, workflow_json: Dict) -> Dict[str, N8nNode]:
         """
@@ -328,7 +358,7 @@ class N8nSchemaParser:
         """
         nodes = {}
 
-        for node_data in workflow_json['nodes']:
+        for node_data in workflow_json["nodes"]:
             try:
                 node = self._parse_node(node_data)
                 if node.name in nodes:
@@ -342,24 +372,26 @@ class N8nSchemaParser:
     def _parse_node(self, node_data: Dict) -> N8nNode:
         """Parse a single node from JSON"""
         # Validate required fields
-        required = ['name', 'type', 'typeVersion', 'position']
+        required = ["name", "type", "typeVersion", "position"]
         for field in required:
             if field not in node_data:
                 raise ValueError(f"Node missing required field: {field}")
 
         return N8nNode(
-            id=node_data.get('id', node_data['name']),
-            name=node_data['name'],
-            type=node_data['type'],
-            type_version=node_data['typeVersion'],
-            position=(node_data['position'][0], node_data['position'][1]),
-            parameters=node_data.get('parameters', {}),
-            credentials=node_data.get('credentials'),
-            disabled=node_data.get('disabled', False),
-            notes=node_data.get('notes', '')
+            id=node_data.get("id", node_data["name"]),
+            name=node_data["name"],
+            type=node_data["type"],
+            type_version=node_data["typeVersion"],
+            position=(node_data["position"][0], node_data["position"][1]),
+            parameters=node_data.get("parameters", {}),
+            credentials=node_data.get("credentials"),
+            disabled=node_data.get("disabled", False),
+            notes=node_data.get("notes", ""),
         )
 
-    def _extract_connections(self, workflow_json: Dict, nodes: Dict[str, N8nNode]) -> List[N8nConnection]:
+    def _extract_connections(
+        self, workflow_json: Dict, nodes: Dict[str, N8nNode]
+    ) -> List[N8nConnection]:
         """
         Extract and validate connections between nodes.
 
@@ -367,11 +399,11 @@ class N8nSchemaParser:
         """
         connections = []
 
-        if 'connections' not in workflow_json:
+        if "connections" not in workflow_json:
             self._handle_warning("No connections defined in workflow")
             return connections
 
-        conn_data = workflow_json['connections']
+        conn_data = workflow_json["connections"]
 
         for source_name, outputs in conn_data.items():
             if source_name not in nodes:
@@ -384,28 +416,31 @@ class N8nSchemaParser:
                         continue
 
                     for target in targets:
-                        target_name = target['node']
-                        target_input = target.get('type', 'main')
-                        target_idx = target.get('index', 0)
+                        target_name = target["node"]
+                        target_input = target.get("type", "main")
+                        target_idx = target.get("index", 0)
 
                         if target_name not in nodes:
-                            self._handle_error(f"Connection references non-existent target node: {target_name}")
+                            self._handle_error(
+                                f"Connection references non-existent target node: {target_name}"
+                            )
                             continue
 
-                        connections.append(N8nConnection(
-                            source_node=source_name,
-                            target_node=target_name,
-                            source_output=output_idx,
-                            target_input=target_idx
-                        ))
+                        connections.append(
+                            N8nConnection(
+                                source_node=source_name,
+                                target_node=target_name,
+                                source_output=output_idx,
+                                target_input=target_idx,
+                            )
+                        )
 
         return connections
 
     def _compute_trigger_nodes(self, workflow: ParsedWorkflow) -> None:
         """Identify trigger nodes in the workflow"""
         workflow.trigger_nodes = [
-            name for name, node in workflow.nodes.items()
-            if node.is_trigger()
+            name for name, node in workflow.nodes.items() if node.is_trigger()
         ]
 
         if not workflow.trigger_nodes:

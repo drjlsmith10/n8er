@@ -11,17 +11,28 @@ Created: 2025-11-08
 
 import json
 import logging
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, asdict
-from datetime import datetime
+import sys
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+# Add parent directory to path for config imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# Import config for workflow limits
+try:
+    from config import config
+
+    WORKFLOW_LIMITS_ENABLED = True
+except ImportError:
+    WORKFLOW_LIMITS_ENABLED = False
+    logger.warning("Config not available, workflow size limits disabled")
 
 
 @dataclass
@@ -31,6 +42,7 @@ class NodeTemplate:
 
     Reasoning: Templates enable consistent node generation with sensible defaults
     """
+
     type: str
     name: str
     parameters: Dict
@@ -59,13 +71,30 @@ class WorkflowBuilder:
         self.name = name
         self.nodes: List[Dict] = []
         self.connections: Dict[str, Dict] = {}
+
+        # Complete settings with all supported n8n options
         self.settings: Dict = {
-            "executionOrder": "v1"
+            "executionOrder": "v1",
+            "saveExecutionProgress": False,
+            "saveManualExecutions": True,
+            "timezone": "UTC",
+            "callerPolicy": "workflowsFromSameOwner",
         }
+
+        # Workflow-level IDs and metadata
+        self.workflow_id = str(uuid.uuid4())
+        self.version_id = str(uuid.uuid4())
+
         self.metadata = {
             "createdAt": datetime.utcnow().isoformat() + "Z",
-            "updatedAt": datetime.utcnow().isoformat() + "Z"
+            "updatedAt": datetime.utcnow().isoformat() + "Z",
         }
+
+        # Additional n8n workflow fields
+        self.meta = {"templateCredsSetupCompleted": True, "instanceId": str(uuid.uuid4())}
+
+        self.pin_data = {}
+        self.static_data = {}
 
         # Auto-positioning
         self.current_x = 240
@@ -76,7 +105,7 @@ class WorkflowBuilder:
         # Node name tracking for uniqueness
         self.node_names = set()
 
-        logger.info(f"Initialized WorkflowBuilder: {name}")
+        logger.debug(f"Initialized WorkflowBuilder: {name}")
 
     def add_node(
         self,
@@ -86,8 +115,8 @@ class WorkflowBuilder:
         position: Optional[Tuple[int, int]] = None,
         credentials: Optional[Dict] = None,
         type_version: int = 1,
-        notes: str = ""
-    ) -> 'WorkflowBuilder':
+        notes: str = "",
+    ) -> "WorkflowBuilder":
         """
         Add a node to the workflow.
 
@@ -127,7 +156,7 @@ class WorkflowBuilder:
             "type": node_type,
             "typeVersion": type_version,
             "position": list(position),
-            "parameters": parameters or {}
+            "parameters": parameters or {},
         }
 
         if credentials:
@@ -142,12 +171,8 @@ class WorkflowBuilder:
         return self
 
     def add_trigger(
-        self,
-        trigger_type: str,
-        name: str = "Trigger",
-        parameters: Optional[Dict] = None,
-        **kwargs
-    ) -> 'WorkflowBuilder':
+        self, trigger_type: str, name: str = "Trigger", parameters: Optional[Dict] = None, **kwargs
+    ) -> "WorkflowBuilder":
         """
         Add a trigger node (convenience method).
 
@@ -158,7 +183,7 @@ class WorkflowBuilder:
             "webhook": "n8n-nodes-base.webhook",
             "manual": "n8n-nodes-base.manualTrigger",
             "cron": "n8n-nodes-base.cron",
-            "email": "n8n-nodes-base.emailTrigger"
+            "email": "n8n-nodes-base.emailTrigger",
         }
 
         full_type = trigger_map.get(trigger_type.lower(), trigger_type)
@@ -170,8 +195,8 @@ class WorkflowBuilder:
         target: str,
         source_output: int = 0,
         target_input: int = 0,
-        connection_type: str = "main"
-    ) -> 'WorkflowBuilder':
+        connection_type: str = "main",
+    ) -> "WorkflowBuilder":
         """
         Create a connection between two nodes.
 
@@ -205,18 +230,14 @@ class WorkflowBuilder:
             self.connections[source][connection_type].append([])
 
         # Add connection
-        connection_def = {
-            "node": target,
-            "type": connection_type,
-            "index": target_input
-        }
+        connection_def = {"node": target, "type": connection_type, "index": target_input}
 
         self.connections[source][connection_type][source_output].append(connection_def)
         logger.debug(f"Connected: {source} → {target}")
 
         return self
 
-    def connect_chain(self, *node_names: str) -> 'WorkflowBuilder':
+    def connect_chain(self, *node_names: str) -> "WorkflowBuilder":
         """
         Connect multiple nodes in sequence.
 
@@ -230,17 +251,66 @@ class WorkflowBuilder:
 
         return self
 
-    def set_active(self, active: bool = True) -> 'WorkflowBuilder':
+    def set_active(self, active: bool = True) -> "WorkflowBuilder":
         """Set workflow active status"""
         self.metadata["active"] = active
         return self
 
-    def add_tags(self, *tags: str) -> 'WorkflowBuilder':
+    def add_tags(self, *tags: str) -> "WorkflowBuilder":
         """Add tags to workflow"""
         if "tags" not in self.metadata:
             self.metadata["tags"] = []
         self.metadata["tags"].extend(tags)
         return self
+
+    def _validate_size(self) -> Tuple[bool, List[str]]:
+        """
+        Validate workflow size against configured limits.
+
+        Returns:
+            Tuple of (is_valid, warning_messages)
+        """
+        warnings = []
+
+        if not WORKFLOW_LIMITS_ENABLED:
+            return True, []
+
+        node_count = len(self.nodes)
+        connection_count = sum(
+            len(conns.get(conn_type, []))
+            for conns in self.connections.values()
+            for conn_type in conns
+        )
+        complexity = node_count + connection_count
+
+        # Check warnings
+        if node_count > config.WARN_WORKFLOW_NODES:
+            warnings.append(
+                f"WARNING: Workflow has {node_count} nodes (warning threshold: {config.WARN_WORKFLOW_NODES}). "
+                "Large workflows may be slow to execute."
+            )
+
+        if complexity > config.WARN_WORKFLOW_COMPLEXITY:
+            warnings.append(
+                f"WARNING: Workflow complexity is {complexity} (warning threshold: {config.WARN_WORKFLOW_COMPLEXITY}). "
+                "Consider breaking into smaller workflows."
+            )
+
+        # Check hard limits
+        is_valid = True
+        if node_count > config.MAX_WORKFLOW_NODES:
+            warnings.append(
+                f"ERROR: Workflow exceeds maximum nodes ({node_count} > {config.MAX_WORKFLOW_NODES})"
+            )
+            is_valid = False
+
+        if complexity > config.MAX_WORKFLOW_COMPLEXITY:
+            warnings.append(
+                f"ERROR: Workflow exceeds maximum complexity ({complexity} > {config.MAX_WORKFLOW_COMPLEXITY})"
+            )
+            is_valid = False
+
+        return is_valid, warnings
 
     def build(self, validate: bool = True) -> Dict:
         """
@@ -254,23 +324,40 @@ class WorkflowBuilder:
 
         Reasoning: Final validation ensures generated workflow is valid
         """
+        # Check size limits
+        is_size_valid, size_warnings = self._validate_size()
+        for warning in size_warnings:
+            if warning.startswith("ERROR"):
+                logger.error(warning)
+            else:
+                logger.warning(warning)
+
+        if not is_size_valid:
+            raise ValueError(f"Workflow exceeds size limits: {size_warnings}")
+
         workflow = {
+            "id": self.workflow_id,
             "name": self.name,
             "nodes": self.nodes,
             "connections": self.connections,
             "settings": self.settings,
-            **self.metadata
+            "versionId": self.version_id,
+            "meta": self.meta,
+            "pinData": self.pin_data,
+            "staticData": self.static_data,
+            **self.metadata,
         }
 
-        logger.info(f"Built workflow: {self.name} ({len(self.nodes)} nodes)")
+        logger.debug(f"Built workflow: {self.name} ({len(self.nodes)} nodes)")
 
         # Optional validation
         if validate:
             try:
                 from parse_n8n_schema import parse_workflow_json
+
                 parsed = parse_workflow_json(workflow, strict=False)
                 if parsed:
-                    logger.info("✓ Workflow validation passed")
+                    logger.debug("✓ Workflow validation passed")
                 else:
                     logger.warning("✗ Workflow validation failed")
             except ImportError:
@@ -288,10 +375,10 @@ class WorkflowBuilder:
         """
         workflow = self.build(validate=validate)
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(workflow, f, indent=2)
 
-        logger.info(f"Saved workflow to: {filepath}")
+        logger.debug(f"Saved workflow to: {filepath}")
 
 
 class TemplateLibrary:
@@ -305,7 +392,7 @@ class TemplateLibrary:
     def webhook_to_email(
         webhook_path: str = "webhook-test",
         email_to: str = "user@example.com",
-        email_subject: str = "Webhook Received"
+        email_subject: str = "Webhook Received",
     ) -> Dict:
         """
         Generate a simple webhook → email notification workflow.
@@ -318,23 +405,22 @@ class TemplateLibrary:
         builder.add_trigger(
             "webhook",
             "Webhook",
-            parameters={
-                "path": webhook_path,
-                "httpMethod": "POST",
-                "responseMode": "onReceived"
-            }
+            parameters={"path": webhook_path, "httpMethod": "POST", "responseMode": "onReceived"},
         )
 
         # Add email sender
         builder.add_node(
             "n8n-nodes-base.emailSend",
             "Send Email",
+            type_version=2,
             parameters={
+                "fromEmail": "noreply@example.com",
                 "toEmail": email_to,
                 "subject": email_subject,
-                "text": "=Webhook received with data: {{ $json }}",
-                "fromEmail": "noreply@example.com"
-            }
+                "emailFormat": "text",
+                "message": "=Webhook received with data: {{ $json }}",
+                "options": {},
+            },
         )
 
         # Connect
@@ -344,9 +430,7 @@ class TemplateLibrary:
 
     @staticmethod
     def http_request_transform(
-        url: str,
-        method: str = "GET",
-        transform_code: str = "return items;"
+        url: str, method: str = "GET", transform_code: str = "return items;"
     ) -> Dict:
         """
         Generate HTTP Request → Transform → Output workflow.
@@ -362,20 +446,12 @@ class TemplateLibrary:
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "HTTP Request",
-            parameters={
-                "url": url,
-                "method": method,
-                "responseFormat": "json"
-            }
+            parameters={"url": url, "method": method, "responseFormat": "json"},
         )
 
         # Function transform
         builder.add_node(
-            "n8n-nodes-base.function",
-            "Transform Data",
-            parameters={
-                "functionCode": transform_code
-            }
+            "n8n-nodes-base.function", "Transform Data", parameters={"functionCode": transform_code}
         )
 
         # Chain connections
@@ -384,10 +460,7 @@ class TemplateLibrary:
         return builder.build()
 
     @staticmethod
-    def etl_pipeline(
-        source_type: str = "database",
-        destination_type: str = "webhook"
-    ) -> Dict:
+    def etl_pipeline(source_type: str = "database", destination_type: str = "webhook") -> Dict:
         """
         Generate Extract → Transform → Load workflow.
 
@@ -397,27 +470,14 @@ class TemplateLibrary:
 
         # Trigger (scheduled)
         builder.add_trigger(
-            "cron",
-            "Schedule",
-            parameters={
-                "triggerTimes": {
-                    "item": [
-                        {
-                            "mode": "everyHour"
-                        }
-                    ]
-                }
-            }
+            "cron", "Schedule", parameters={"triggerTimes": {"item": [{"mode": "everyHour"}]}}
         )
 
         # Extract
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Extract Data",
-            parameters={
-                "url": "https://api.example.com/data",
-                "method": "GET"
-            }
+            parameters={"url": "https://api.example.com/data", "method": "GET"},
         )
 
         # Transform
@@ -427,33 +487,22 @@ class TemplateLibrary:
             parameters={
                 "values": {
                     "string": [
-                        {
-                            "name": "transformed_field",
-                            "value": "={{ $json.original_field }}"
-                        }
+                        {"name": "transformed_field", "value": "={{ $json.original_field }}"}
                     ]
                 },
-                "options": {}
-            }
+                "options": {},
+            },
         )
 
         # Load
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Load to Destination",
-            parameters={
-                "url": "https://destination.example.com/api",
-                "method": "POST"
-            }
+            parameters={"url": "https://destination.example.com/api", "method": "POST"},
         )
 
         # Chain all together
-        builder.connect_chain(
-            "Schedule",
-            "Extract Data",
-            "Transform Fields",
-            "Load to Destination"
-        )
+        builder.connect_chain("Schedule", "Extract Data", "Transform Fields", "Load to Destination")
 
         return builder.build()
 
@@ -471,44 +520,35 @@ class TemplateLibrary:
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "API Call",
-            parameters={
-                "url": api_url,
-                "method": "GET",
-                "options": {
-                    "timeout": 10000
-                }
-            }
+            parameters={"url": api_url, "method": "GET", "options": {"timeout": 10000}},
         )
 
         builder.add_node(
             "n8n-nodes-base.if",
             "Check Success",
+            type_version=2,
             parameters={
                 "conditions": {
-                    "boolean": [],
-                    "number": [
+                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                    "conditions": [
                         {
-                            "value1": "={{ $json.statusCode }}",
-                            "operation": "equal",
-                            "value2": 200
+                            "id": "condition-check-success",
+                            "leftValue": "={{ $json.statusCode }}",
+                            "rightValue": 200,
+                            "operator": {"type": "number", "operation": "equals"},
                         }
-                    ]
+                    ],
+                    "combinator": "and",
                 }
-            }
+            },
         )
 
-        builder.add_node(
-            "n8n-nodes-base.noOp",
-            "Success Handler"
-        )
+        builder.add_node("n8n-nodes-base.noOp", "Success Handler")
 
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Send Error Alert",
-            parameters={
-                "url": "https://alerts.example.com/error",
-                "method": "POST"
-            }
+            parameters={"url": "https://alerts.example.com/error", "method": "POST"},
         )
 
         # Connect flow
@@ -536,7 +576,7 @@ def generate_from_template(template_name: str, **params) -> Dict:
         "webhook_email": TemplateLibrary.webhook_to_email,
         "http_transform": TemplateLibrary.http_request_transform,
         "etl": TemplateLibrary.etl_pipeline,
-        "api_error_handling": TemplateLibrary.api_with_error_handling
+        "api_error_handling": TemplateLibrary.api_with_error_handling,
     }
 
     if template_name not in templates:
@@ -547,9 +587,9 @@ def generate_from_template(template_name: str, **params) -> Dict:
 
 def save_workflow(workflow_json: Dict, filepath: str) -> None:
     """Save workflow JSON to file"""
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         json.dump(workflow_json, f, indent=2)
-    logger.info(f"Saved workflow to: {filepath}")
+    logger.debug(f"Saved workflow to: {filepath}")
 
 
 if __name__ == "__main__":
@@ -568,8 +608,7 @@ if __name__ == "__main__":
 
     # Example 2: Using template
     workflow2 = TemplateLibrary.webhook_to_email(
-        webhook_path="alerts",
-        email_to="admin@example.com"
+        webhook_path="alerts", email_to="admin@example.com"
     )
     print(f"✓ Generated: {workflow2['name']}")
 

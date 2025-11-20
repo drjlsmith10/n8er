@@ -5,8 +5,7 @@ Install the package with:
     pip install -e .
 """
 
-from setuptools import setup, find_packages
-import os
+from setuptools import find_packages, setup
 
 # Read README for long description
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -49,7 +48,7 @@ setup(
             "praw>=7.7.0",  # Reddit API
             "google-api-python-client>=2.0.0",  # YouTube API
             "tweepy>=4.0.0",  # Twitter API
-        ]
+        ],
     },
     entry_points={
         "console_scripts": [

@@ -1,10 +1,11 @@
 {
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "name": "Webhook to Email Notification",
   "nodes": [
     {
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         240,
         300
@@ -18,16 +19,18 @@
     {
       "name": "Send Email",
       "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 1,
+      "typeVersion": 2.1,
       "position": [
         580,
         300
       ],
       "parameters": {
+        "fromEmail": "noreply@automata.com",
         "toEmail": "admin@example.com",
         "subject": "Alert: Webhook Received",
-        "text": "=Webhook received with data: {{ $json }}",
-        "fromEmail": "noreply@automata.com"
+        "emailFormat": "text",
+        "message": "=Webhook received with data: {{ $json }}",
+        "options": {}
       }
     }
   ],
@@ -45,8 +48,19 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
   },
+  "versionId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+  },
+  "pinData": {},
+  "staticData": {},
   "createdAt": "2025-11-08T01:34:00.000Z",
   "updatedAt": "2025-11-08T01:34:00.000Z",
   "tags": [

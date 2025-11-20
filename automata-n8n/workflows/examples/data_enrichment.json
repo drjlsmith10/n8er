@@ -1,0 +1,76 @@
+{
+  "id": "data-enrich-001",
+  "name": "Data Enrichment Pipeline",
+  "description": "Enrich customer data with external sources",
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "name": "Load Customer Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [580, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, email FROM customers WHERE enriched_at IS NULL LIMIT 100;"
+      }
+    },
+    {
+      "name": "Enrich with Clearbit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [920, 300],
+      "parameters": {
+        "url": "=https://company.clearbit.com/v1/companies/find?domain={{ $json.email.split('@')[1] }}",
+        "method": "GET",
+        "authentication": "basicAuth"
+      }
+    },
+    {
+      "name": "Update Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1260, 300],
+      "parameters": {
+        "operation": "update",
+        "table": "customers",
+        "updateKey": "id",
+        "columnString": "company_name, company_industry, enriched_at",
+        "valueString": "={{ $json.name }}, {{ $json.sector }}, {{ $now.toISOString() }}"
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{ "node": "Load Customer Data", "type": "main", "index": 0 }]]
+    },
+    "Load Customer Data": {
+      "main": [[{ "node": "Enrich with Clearbit", "type": "main", "index": 0 }]]
+    },
+    "Enrich with Clearbit": {
+      "main": [[{ "node": "Update Database", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "enrich-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-006"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["data-enrichment", "crm", "integration", "database"]
+}
