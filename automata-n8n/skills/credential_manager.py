@@ -281,9 +281,25 @@ class CredentialManager:
         """
         Save credentials manifest to JSON file.
 
+        ⚠️  SECURITY WARNING ⚠️
+        This method saves credential metadata to disk. While it does NOT save
+        actual credential values (passwords, API keys, etc.), it DOES save
+        credential references and field definitions that could expose sensitive
+        information about your infrastructure.
+
+        RECOMMENDATIONS:
+        - Ensure file permissions are restrictive (600 or 400)
+        - Never commit credential manifests to version control
+        - Consider using environment variables or secrets management instead
+        - Add credential manifest files to .gitignore
+
         Args:
             filepath: Output file path
         """
+        # Runtime security warnings
+        logger.warning("⚠️  SECURITY WARNING: Saving credentials to disk. Ensure file permissions are secure!")
+        logger.warning("⚠️  Consider using environment variables or secrets management instead.")
+
         manifest = self.export_credentials_manifest()
 
         with open(filepath, "w", encoding="utf-8") as f:

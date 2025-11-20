@@ -192,7 +192,7 @@ NODE_TYPE_VERSIONS: Dict[str, Tuple[float, float, float, str]] = {
     # ==========================================
     # AWS NODES
     # ==========================================
-    "n8n-nodes-base.awsS3": (1.1, 1.0, 1.1, "AWS S3 storage"),
+    # Note: awsS3 already defined in CLOUD STORAGE NODES section above
     "n8n-nodes-base.awsLambda": (1.0, 1.0, 1.0, "AWS Lambda functions"),
     "n8n-nodes-base.awsSns": (1.0, 1.0, 1.0, "AWS SNS notifications"),
     "n8n-nodes-base.awsSqs": (1.0, 1.0, 1.0, "AWS SQS queues"),

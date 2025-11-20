@@ -93,8 +93,8 @@ class WorkflowBuilder:
         # Additional n8n workflow fields
         self.meta = {"templateCredsSetupCompleted": True, "instanceId": str(uuid.uuid4())}
 
-        self.pin_data = {}
-        self.static_data = {}
+        self.pin_data: Dict = {}  # Type annotation for mypy
+        self.static_data: Dict = {}  # Type annotation for mypy
 
         # Auto-positioning
         self.current_x = 240

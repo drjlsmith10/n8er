@@ -34,6 +34,12 @@ from skills.n8n_api_client import (
     create_client_from_env,
 )
 
+# PRODUCTION SAFETY CHECK: Prevent running integration tests against production
+# This check must happen at module level BEFORE any tests are collected
+N8N_API_URL = os.getenv("N8N_API_URL", "")
+if N8N_API_URL and any(word in N8N_API_URL.lower() for word in ["prod", "production", "live"]):
+    pytest.exit("DANGER: Cannot run integration tests against production environment!", returncode=1)
+
 # Check if n8n is configured
 N8N_CONFIGURED = bool(os.getenv("N8N_API_URL") and os.getenv("N8N_API_KEY"))
 
@@ -126,7 +132,7 @@ class TestN8nApiClientConnection:
     def test_connection_with_invalid_key(self):
         """Test connection with invalid API key."""
         client = N8nApiClient(api_url=os.getenv("N8N_API_URL"), api_key="invalid_key_12345")
-        ok, msg = n8n_client.test_connection()
+        ok, msg = client.test_connection()  # Fixed: was n8n_client, should be client
         # Should fail with authentication error
         # Note: Depending on n8n config, might succeed if auth not required
         assert isinstance(msg, str)

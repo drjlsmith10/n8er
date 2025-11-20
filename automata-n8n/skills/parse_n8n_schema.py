@@ -397,7 +397,7 @@ class N8nSchemaParser:
 
         Reasoning: Connection validation ensures workflow integrity
         """
-        connections = []
+        connections: List[N8nConnection] = []  # Type annotation for mypy
 
         if "connections" not in workflow_json:
             self._handle_warning("No connections defined in workflow")

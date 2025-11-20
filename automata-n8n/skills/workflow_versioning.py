@@ -364,7 +364,7 @@ class WorkflowVersionManager:
         Returns:
             Dict containing categorized changes
         """
-        changes = {
+        changes: Dict[str, Any] = {  # Type annotation for mypy
             "name_changed": workflow1.get("name") != workflow2.get("name"),
             "nodes_added": [],
             "nodes_removed": [],

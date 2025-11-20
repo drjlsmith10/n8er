@@ -17,6 +17,7 @@ Created: 2025-11-20
 """
 
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -65,17 +66,19 @@ class MetricsCollector:
         self.app_name = app_name
         self.metrics: Dict[str, Metric] = {}
         self.timers: Dict[str, List[float]] = {}
+        self._lock = threading.Lock()  # Thread safety for concurrent metric updates
         logger.debug(f"Metrics collector initialized for {app_name}")
 
     # Counter Methods
     def increment_counter(self, name: str, value: float = 1.0, labels: Optional[Dict] = None):
         """Increment a counter metric"""
         full_name = f"{self.app_name}_{name}"
-        if full_name not in self.metrics:
-            self.metrics[full_name] = Metric(
-                name=full_name, type=MetricType.COUNTER, value=0.0, labels=labels or {}
-            )
-        self.metrics[full_name].value += value
+        with self._lock:
+            if full_name not in self.metrics:
+                self.metrics[full_name] = Metric(
+                    name=full_name, type=MetricType.COUNTER, value=0.0, labels=labels or {}
+                )
+            self.metrics[full_name].value += value
 
     def get_counter(self, name: str) -> float:
         """Get current counter value"""
@@ -86,9 +89,10 @@ class MetricsCollector:
     def set_gauge(self, name: str, value: float, labels: Optional[Dict] = None):
         """Set a gauge metric"""
         full_name = f"{self.app_name}_{name}"
-        self.metrics[full_name] = Metric(
-            name=full_name, type=MetricType.GAUGE, value=value, labels=labels or {}
-        )
+        with self._lock:
+            self.metrics[full_name] = Metric(
+                name=full_name, type=MetricType.GAUGE, value=value, labels=labels or {}
+            )
 
     def get_gauge(self, name: str) -> float:
         """Get current gauge value"""
@@ -105,16 +109,17 @@ class MetricsCollector:
         duration_ms = (time.perf_counter() - start_time) * 1000
 
         full_name = f"{self.app_name}_{name}"
-        if full_name not in self.timers:
-            self.timers[full_name] = []
+        with self._lock:
+            if full_name not in self.timers:
+                self.timers[full_name] = []
 
-        self.timers[full_name].append(duration_ms)
+            self.timers[full_name].append(duration_ms)
 
-        # Also record as metric
-        if full_name not in self.metrics:
-            self.metrics[full_name] = Metric(
-                name=full_name, type=MetricType.HISTOGRAM, labels=labels or {}
-            )
+            # Also record as metric
+            if full_name not in self.metrics:
+                self.metrics[full_name] = Metric(
+                    name=full_name, type=MetricType.HISTOGRAM, labels=labels or {}
+                )
 
         return duration_ms
 
@@ -137,9 +142,10 @@ class MetricsCollector:
     def record_histogram(self, name: str, value: float, labels: Optional[Dict] = None):
         """Record a value in a histogram"""
         full_name = f"{self.app_name}_{name}"
-        if full_name not in self.timers:
-            self.timers[full_name] = []
-        self.timers[full_name].append(value)
+        with self._lock:
+            if full_name not in self.timers:
+                self.timers[full_name] = []
+            self.timers[full_name].append(value)
 
     # Prometheus Format Export
     def export_prometheus(self) -> str:
