@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import uuid
+from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from difflib import unified_diff
@@ -119,7 +120,8 @@ class WorkflowVersionManager:
 
     def __init__(self):
         """Initialize version manager"""
-        self.versions: Dict[str, List[WorkflowVersion]] = {}
+        # Use defaultdict(list) to avoid race condition in check-then-act pattern
+        self.versions: Dict[str, List[WorkflowVersion]] = defaultdict(list)
         logger.debug("Initialized WorkflowVersionManager")
 
     def create_version(
@@ -164,9 +166,7 @@ class WorkflowVersionManager:
         if errors:
             logger.warning(f"Version validation warnings: {', '.join(errors)}")
 
-        # Store
-        if workflow_id not in self.versions:
-            self.versions[workflow_id] = []
+        # Store (defaultdict(list) automatically creates list if key doesn't exist)
         self.versions[workflow_id].append(version_obj)
 
         logger.debug(f"Created version {version} for workflow '{workflow_name}'")
@@ -487,8 +487,25 @@ class WorkflowVersionManager:
         return history
 
     def _calculate_checksum(self, workflow: Dict) -> str:
-        """Calculate SHA-256 checksum of workflow"""
-        workflow_str = json.dumps(workflow, sort_keys=True)
+        """
+        Calculate SHA-256 checksum of workflow.
+
+        Excludes volatile fields (timestamps, IDs, metadata) to ensure
+        checksum only changes when actual workflow content changes.
+        """
+        # Create a copy to avoid modifying the original
+        workflow_copy = workflow.copy()
+
+        # Remove volatile fields that change even when content doesn't
+        volatile_fields = ['createdAt', 'updatedAt', 'id', 'versionId', 'updatedBy']
+        for field in volatile_fields:
+            workflow_copy.pop(field, None)
+
+        # Also remove meta object which contains volatile metadata
+        workflow_copy.pop('meta', None)
+
+        # Calculate checksum on cleaned workflow
+        workflow_str = json.dumps(workflow_copy, sort_keys=True)
         return hashlib.sha256(workflow_str.encode()).hexdigest()
 
     def _calculate_version_diff(self, version1: str, version2: str) -> Dict[str, int]:

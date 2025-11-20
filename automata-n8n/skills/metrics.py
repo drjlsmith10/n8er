@@ -19,6 +19,7 @@ Created: 2025-11-20
 import logging
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -65,7 +66,8 @@ class MetricsCollector:
         """Initialize metrics collector"""
         self.app_name = app_name
         self.metrics: Dict[str, Metric] = {}
-        self.timers: Dict[str, List[float]] = {}
+        # Use deque with maxlen for bounded storage (prevents memory leak)
+        self.timers: Dict[str, deque] = {}
         self._lock = threading.Lock()  # Thread safety for concurrent metric updates
         logger.debug(f"Metrics collector initialized for {app_name}")
 
@@ -111,7 +113,8 @@ class MetricsCollector:
         full_name = f"{self.app_name}_{name}"
         with self._lock:
             if full_name not in self.timers:
-                self.timers[full_name] = []
+                # Use deque with maxlen=1000 for bounded storage (prevents memory leak)
+                self.timers[full_name] = deque(maxlen=1000)
 
             self.timers[full_name].append(duration_ms)
 
@@ -144,7 +147,8 @@ class MetricsCollector:
         full_name = f"{self.app_name}_{name}"
         with self._lock:
             if full_name not in self.timers:
-                self.timers[full_name] = []
+                # Use deque with maxlen=1000 for bounded storage (prevents memory leak)
+                self.timers[full_name] = deque(maxlen=1000)
             self.timers[full_name].append(value)
 
     # Prometheus Format Export

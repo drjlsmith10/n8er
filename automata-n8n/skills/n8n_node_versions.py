@@ -242,8 +242,8 @@ def get_node_version(node_type: str, use_latest: bool = True) -> float:
         4.2
     """
     if node_type not in NODE_TYPE_VERSIONS:
-        logger.warning(f"Unknown node type: {node_type}, defaulting to typeVersion 1.0")
-        return 1.0
+        logger.error(f"Unknown node type: {node_type}")
+        raise ValueError(f"Unknown node type: {node_type}. Add to NODE_TYPE_VERSIONS or check node type string.")
 
     default_version, min_version, max_version, notes = NODE_TYPE_VERSIONS[node_type]
 
@@ -301,7 +301,7 @@ def validate_node_version(node_type: str, type_version: float) -> Tuple[bool, st
         (False, 'Version 3.0 exceeds maximum supported version 2.1')
     """
     if node_type not in NODE_TYPE_VERSIONS:
-        return (True, f"Unknown node type {node_type}, cannot validate version")
+        return (False, f"Unknown node type {node_type}, cannot validate version")
 
     default_version, min_version, max_version, notes = NODE_TYPE_VERSIONS[node_type]
 

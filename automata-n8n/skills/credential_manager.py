@@ -5,19 +5,38 @@ This module provides tools for managing credentials in n8n workflows,
 including credential templates, placeholders, and reference tracking.
 
 Author: Project Automata - Agent 5 (High Priority Features)
-Version: 2.1.0
+Version: 2.2.0 - Security Hardened
 Created: 2025-11-20
+Updated: 2025-11-20 - Added P0 security fixes (field-level encryption)
 Issue: #9 - Credential Management
+
+Security Features (P0 Fixes):
+- Field-level encryption for sensitive credential data
+- Automatic encryption/decryption of sensitive fields
+- Secure key management with environment variables
 """
 
+import base64
 import json
 import logging
+import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Try to import cryptography for encryption support
+try:
+    from cryptography.fernet import Fernet
+    ENCRYPTION_AVAILABLE = True
+except ImportError:
+    ENCRYPTION_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "cryptography library not available. Install with: pip install cryptography"
+    )
+
+# Configure logging - Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 
@@ -114,14 +133,179 @@ class CredentialManager:
     Manages credentials for workflow generation.
 
     Tracks credential templates, validates references, and provides
-    credential lifecycle management.
+    credential lifecycle management with field-level encryption support.
+
+    Security Features:
+    - Automatic encryption of sensitive fields
+    - Uses cryptography.fernet for field-level encryption
+    - Key management via environment variables
     """
 
-    def __init__(self):
-        """Initialize credential manager"""
+    def __init__(self, encryption_key: Optional[bytes] = None):
+        """
+        Initialize credential manager with optional encryption support.
+
+        Args:
+            encryption_key: Optional Fernet encryption key (32 bytes, base64-encoded).
+                          If not provided, will look for CREDENTIAL_ENCRYPTION_KEY env var.
+                          If neither provided, encryption will be disabled with a warning.
+
+        Example:
+            # Generate a new key:
+            # from cryptography.fernet import Fernet
+            # key = Fernet.generate_key()
+
+            # Using encryption:
+            manager = CredentialManager(encryption_key=key)
+
+            # Or from environment:
+            # export CREDENTIAL_ENCRYPTION_KEY="your-base64-key"
+            manager = CredentialManager()
+        """
         self.credentials: Dict[str, CredentialTemplate] = {}
         self.node_credential_map: Dict[str, List[str]] = {}
+
+        # SECURITY: Initialize encryption
+        self._fernet: Optional[Fernet] = None
+        self._encryption_enabled = False
+
+        if ENCRYPTION_AVAILABLE:
+            # Try to get encryption key from parameter or environment
+            key = encryption_key or os.getenv("CREDENTIAL_ENCRYPTION_KEY", "").encode()
+
+            if key:
+                try:
+                    self._fernet = Fernet(key)
+                    self._encryption_enabled = True
+                    logger.info("Credential encryption enabled")
+                except Exception as e:
+                    logger.error(f"Failed to initialize encryption: {e}")
+                    logger.warning("Continuing without encryption - credentials will NOT be encrypted!")
+            else:
+                logger.warning(
+                    "No encryption key provided. Credentials will NOT be encrypted! "
+                    "Set CREDENTIAL_ENCRYPTION_KEY environment variable or pass encryption_key parameter."
+                )
+        else:
+            logger.warning(
+                "cryptography library not available. Credentials will NOT be encrypted! "
+                "Install with: pip install cryptography"
+            )
+
         logger.debug("Initialized CredentialManager")
+
+    def _encrypt_field(self, value: str) -> str:
+        """
+        Encrypt a sensitive field value.
+
+        Args:
+            value: Plain text value to encrypt
+
+        Returns:
+            Encrypted value (base64-encoded) or original if encryption disabled
+
+        Note:
+            If encryption is not enabled, returns the original value with a warning.
+        """
+        if not self._encryption_enabled or not self._fernet:
+            logger.warning(
+                f"Encryption not enabled - sensitive data stored in plain text! "
+                f"Value preview: {value[:10]}..."
+            )
+            return value
+
+        try:
+            # Encrypt and return as base64 string
+            encrypted_bytes = self._fernet.encrypt(value.encode('utf-8'))
+            return base64.b64encode(encrypted_bytes).decode('utf-8')
+        except Exception as e:
+            logger.error(f"Encryption failed: {e}")
+            raise ValueError(f"Failed to encrypt field: {e}")
+
+    def _decrypt_field(self, encrypted_value: str) -> str:
+        """
+        Decrypt a sensitive field value.
+
+        Args:
+            encrypted_value: Encrypted value (base64-encoded)
+
+        Returns:
+            Decrypted plain text value
+
+        Raises:
+            ValueError: If decryption fails
+        """
+        if not self._encryption_enabled or not self._fernet:
+            # If encryption was never enabled, value is plain text
+            return encrypted_value
+
+        try:
+            # Decode from base64 and decrypt
+            encrypted_bytes = base64.b64decode(encrypted_value.encode('utf-8'))
+            decrypted_bytes = self._fernet.decrypt(encrypted_bytes)
+            return decrypted_bytes.decode('utf-8')
+        except Exception as e:
+            logger.error(f"Decryption failed: {e}")
+            raise ValueError(f"Failed to decrypt field: {e}")
+
+    def _process_fields_for_storage(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process credential fields, encrypting sensitive ones.
+
+        Args:
+            fields: Field definitions with values
+
+        Returns:
+            Fields with sensitive values encrypted
+        """
+        if not fields:
+            return fields
+
+        processed = {}
+        for field_name, field_config in fields.items():
+            if isinstance(field_config, dict):
+                processed[field_name] = field_config.copy()
+                # Check if field is marked as sensitive
+                if field_config.get("sensitive", False) and "value" in field_config:
+                    value = field_config["value"]
+                    if isinstance(value, str) and value:
+                        # Encrypt the value
+                        processed[field_name]["value"] = self._encrypt_field(value)
+                        processed[field_name]["_encrypted"] = True
+            else:
+                processed[field_name] = field_config
+
+        return processed
+
+    def _process_fields_for_use(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process credential fields, decrypting sensitive ones.
+
+        Args:
+            fields: Field definitions with encrypted values
+
+        Returns:
+            Fields with sensitive values decrypted
+        """
+        if not fields:
+            return fields
+
+        processed = {}
+        for field_name, field_config in fields.items():
+            if isinstance(field_config, dict):
+                processed[field_name] = field_config.copy()
+                # Check if field was encrypted
+                if field_config.get("_encrypted", False) and "value" in field_config:
+                    encrypted_value = field_config["value"]
+                    if isinstance(encrypted_value, str):
+                        # Decrypt the value
+                        processed[field_name]["value"] = self._decrypt_field(encrypted_value)
+                        # Remove encryption marker
+                        del processed[field_name]["_encrypted"]
+            else:
+                processed[field_name] = field_config
+
+        return processed
 
     def add_credential(
         self,
@@ -145,23 +329,66 @@ class CredentialManager:
 
         Returns:
             Created CredentialTemplate
+
+        Raises:
+            ValueError: If validation fails
         """
+        # Input validation - validate before creating credential
+        if not name or not name.strip():
+            raise ValueError("Credential name cannot be empty")
+
+        if len(name) > 255:
+            raise ValueError(f"Credential name too long ({len(name)} chars). Maximum 255 characters allowed")
+
+        if not credential_type or not credential_type.strip():
+            raise ValueError("Credential type cannot be empty")
+
+        # Validate credential type against known types
+        valid_types = [
+            "httpBasicAuth",
+            "httpDigestAuth",
+            "httpHeaderAuth",
+            "oAuth2Api",
+            "slackApi",
+            "googleApi",
+            "postgresApi",
+            "mysqlApi",
+            "mongoDb",
+            "aws",
+            "githubApi",
+            "telegramApi",
+            "discordApi",
+            "emailSendApi",
+            "sshPassword",
+            "sshPrivateKey",
+            "ftpApi",
+            "httpQueryAuth",
+        ]
+
+        if credential_type not in valid_types and not credential_type.endswith("Api"):
+            raise ValueError(
+                f"Unknown credential type: {credential_type}. Must be one of {', '.join(valid_types)} or end with 'Api'"
+            )
+
+        # SECURITY: Process fields to encrypt sensitive ones
+        processed_fields = self._process_fields_for_storage(fields or {})
+
         credential = CredentialTemplate(
             name=name,
             type=credential_type,
             description=description,
             credential_id=credential_id,
-            fields=fields or {},
+            fields=processed_fields,
             environment=environment,
         )
 
-        # Validate
+        # Validate credential structure
         errors = credential.validate()
         if errors:
-            logger.warning(f"Credential validation warnings: {', '.join(errors)}")
+            raise ValueError(f"Invalid credential: {', '.join(errors)}")
 
         self.credentials[name] = credential
-        logger.debug(f"Added credential template: {name} ({credential_type})")
+        logger.debug(f"Added credential template: {name} ({credential_type}) - sensitive fields encrypted")
 
         return credential
 
@@ -279,33 +506,77 @@ class CredentialManager:
 
     def save_manifest(self, filepath: str) -> None:
         """
-        Save credentials manifest to JSON file.
+        Save credentials manifest to JSON file with encrypted sensitive fields.
 
-        ⚠️  SECURITY WARNING ⚠️
-        This method saves credential metadata to disk. While it does NOT save
-        actual credential values (passwords, API keys, etc.), it DOES save
-        credential references and field definitions that could expose sensitive
-        information about your infrastructure.
+        ⚠️  SECURITY NOTES ⚠️
+        - Sensitive fields marked with "sensitive": True are encrypted if encryption is enabled
+        - Encrypted fields are stored with "_encrypted": True marker
+        - You must use the same encryption key to load and decrypt the credentials
+        - File still contains metadata that could expose infrastructure details
 
         RECOMMENDATIONS:
         - Ensure file permissions are restrictive (600 or 400)
         - Never commit credential manifests to version control
-        - Consider using environment variables or secrets management instead
+        - Keep encryption key secure (use environment variables)
         - Add credential manifest files to .gitignore
+        - Rotate encryption keys periodically
 
         Args:
             filepath: Output file path
+
+        Note:
+            If encryption is not enabled, sensitive fields will be saved in plain text
+            with a warning.
         """
         # Runtime security warnings
-        logger.warning("⚠️  SECURITY WARNING: Saving credentials to disk. Ensure file permissions are secure!")
-        logger.warning("⚠️  Consider using environment variables or secrets management instead.")
+        if self._encryption_enabled:
+            logger.info(f"Saving encrypted credentials to: {filepath}")
+            logger.warning("⚠️  SECURITY: Keep your encryption key secure! Without it, credentials cannot be decrypted.")
+        else:
+            logger.warning("⚠️  SECURITY WARNING: Encryption not enabled! Credentials will be saved in PLAIN TEXT!")
+            logger.warning("⚠️  Enable encryption by setting CREDENTIAL_ENCRYPTION_KEY environment variable.")
+
+        logger.warning("⚠️  Ensure file permissions are restrictive (chmod 600)")
 
         manifest = self.export_credentials_manifest()
 
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
+        # Set restrictive file permissions (owner read/write only)
+        try:
+            os.chmod(filepath, 0o600)
+            logger.info(f"Set file permissions to 600 (owner read/write only)")
+        except Exception as e:
+            logger.warning(f"Could not set restrictive file permissions: {e}")
+
         logger.debug(f"Saved credentials manifest to: {filepath}")
+
+    @staticmethod
+    def generate_encryption_key() -> bytes:
+        """
+        Generate a new encryption key for credential encryption.
+
+        Returns:
+            Base64-encoded encryption key (bytes)
+
+        Example:
+            key = CredentialManager.generate_encryption_key()
+            print(f"Export this key: export CREDENTIAL_ENCRYPTION_KEY='{key.decode()}'")
+
+            # Use the key
+            manager = CredentialManager(encryption_key=key)
+        """
+        if not ENCRYPTION_AVAILABLE:
+            raise ImportError(
+                "cryptography library not available. Install with: pip install cryptography"
+            )
+
+        key = Fernet.generate_key()
+        logger.info("Generated new encryption key")
+        logger.warning("⚠️  IMPORTANT: Save this key securely! You need it to decrypt credentials.")
+        logger.info(f"Set environment variable: export CREDENTIAL_ENCRYPTION_KEY='{key.decode()}'")
+        return key
 
 
 class CredentialLibrary:

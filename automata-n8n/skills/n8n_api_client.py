@@ -112,7 +112,7 @@ class N8nApiClient:
             total=max_retries,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST"],
+            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -411,10 +411,16 @@ class N8nApiClient:
 
         Returns:
             Updated workflow object
+
+        Note:
+            Uses PATCH to atomically update only the 'active' field,
+            avoiding TOCTOU (Time-Of-Check-Time-Of-Use) race conditions.
         """
-        workflow = self.get_workflow(workflow_id)
-        workflow["active"] = True
-        return self.update_workflow(workflow_id, workflow)
+        # Use PATCH to atomically update just the 'active' field
+        # This avoids race condition from GET → modify → PUT pattern
+        response = self._request("PATCH", f"/workflows/{workflow_id}", data={"active": True})
+        logger.info(f"Activated workflow: {workflow_id}")
+        return response
 
     def deactivate_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
@@ -425,10 +431,16 @@ class N8nApiClient:
 
         Returns:
             Updated workflow object
+
+        Note:
+            Uses PATCH to atomically update only the 'active' field,
+            avoiding TOCTOU (Time-Of-Check-Time-Of-Use) race conditions.
         """
-        workflow = self.get_workflow(workflow_id)
-        workflow["active"] = False
-        return self.update_workflow(workflow_id, workflow)
+        # Use PATCH to atomically update just the 'active' field
+        # This avoids race condition from GET → modify → PUT pattern
+        response = self._request("PATCH", f"/workflows/{workflow_id}", data={"active": False})
+        logger.info(f"Deactivated workflow: {workflow_id}")
+        return response
 
     def validate_workflow_import(self, workflow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         """
