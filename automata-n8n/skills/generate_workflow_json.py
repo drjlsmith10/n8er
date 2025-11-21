@@ -16,10 +16,17 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Add parent directory to path for config imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import pydantic validation schemas
+try:
+    from validation_schemas import validate_node, validate_workflow, NodeInput, WorkflowInput
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -45,16 +52,35 @@ class NodeTemplate:
 
     type: str
     name: str
-    parameters: Dict
+    parameters: Dict[str, Any]
     type_version: int = 1
     position_offset: Tuple[int, int] = (0, 0)
-    credentials: Optional[Dict] = None
+    credentials: Optional[Dict[str, Any]] = None
     notes: str = ""
 
 
 class WorkflowBuilder:
     """
     Fluent builder for constructing n8n workflows programmatically.
+
+    Thread Safety:
+        This class is NOT thread-safe for shared instance usage.
+        Builder instances maintain mutable state during workflow construction.
+
+        RECOMMENDATION: Each thread should create its own WorkflowBuilder instance.
+        Do NOT share builder instances between threads.
+
+    Example (Thread-Safe Usage):
+        # Good: Each thread creates its own builder
+        def worker():
+            builder = WorkflowBuilder("My Workflow")
+            builder.add_node(...)
+            return builder.build()
+
+        # Bad: Sharing builder between threads
+        builder = WorkflowBuilder()  # DON'T DO THIS
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(builder.add_node, ...) for ...]  # NOT THREAD-SAFE
 
     Usage:
         builder = WorkflowBuilder("My Workflow")
@@ -66,14 +92,31 @@ class WorkflowBuilder:
     Reasoning: Builder pattern provides intuitive API for workflow construction
     """
 
-    def __init__(self, name: str = "Generated Workflow"):
-        """Initialize workflow builder"""
+    def __init__(self, name: str = "Generated Workflow", validate_inputs: bool = True):
+        """
+        Initialize workflow builder.
+
+        Note:
+            Builder instances are designed for single-threaded use and are NOT thread-safe.
+            Create a new builder instance for each workflow in multi-threaded code.
+
+        Args:
+            name: Workflow name
+            validate_inputs: Enable pydantic input validation (default: True)
+        """
         self.name = name
-        self.nodes: List[Dict] = []
-        self.connections: Dict[str, Dict] = {}
+        self.nodes: List[Dict[str, Any]] = []
+        self.connections: Dict[str, Dict[str, Any]] = {}
+        self.validate_inputs = validate_inputs and VALIDATION_AVAILABLE
+
+        if validate_inputs and not VALIDATION_AVAILABLE:
+            logger.warning(
+                "Input validation requested but validation_schemas not available. "
+                "Validation disabled."
+            )
 
         # Complete settings with all supported n8n options
-        self.settings: Dict = {
+        self.settings: Dict[str, Any] = {
             "executionOrder": "v1",
             "saveExecutionProgress": False,
             "saveManualExecutions": True,
@@ -85,16 +128,16 @@ class WorkflowBuilder:
         self.workflow_id = str(uuid.uuid4())
         self.version_id = str(uuid.uuid4())
 
-        self.metadata = {
+        self.metadata: Dict[str, Any] = {
             "createdAt": datetime.utcnow().isoformat() + "Z",
             "updatedAt": datetime.utcnow().isoformat() + "Z",
         }
 
         # Additional n8n workflow fields
-        self.meta = {"templateCredsSetupCompleted": True, "instanceId": str(uuid.uuid4())}
+        self.meta: Dict[str, Any] = {"templateCredsSetupCompleted": True, "instanceId": str(uuid.uuid4())}
 
-        self.pin_data: Dict = {}  # Type annotation for mypy
-        self.static_data: Dict = {}  # Type annotation for mypy
+        self.pin_data: Dict[str, Any] = {}  # Type annotation for mypy
+        self.static_data: Dict[str, Any] = {}  # Type annotation for mypy
 
         # Auto-positioning
         self.current_x = 240
@@ -103,7 +146,7 @@ class WorkflowBuilder:
         self.y_spacing = 180
 
         # Node name tracking for uniqueness
-        self.node_names = set()
+        self.node_names: Set[str] = set()
 
         logger.debug(f"Initialized WorkflowBuilder: {name}")
 
@@ -111,9 +154,9 @@ class WorkflowBuilder:
         self,
         node_type: str,
         name: str,
-        parameters: Optional[Dict] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         position: Optional[Tuple[int, int]] = None,
-        credentials: Optional[Dict] = None,
+        credentials: Optional[Dict[str, Any]] = None,
         type_version: int = 1,
         notes: str = "",
     ) -> "WorkflowBuilder":
@@ -165,13 +208,24 @@ class WorkflowBuilder:
         if notes:
             node["notes"] = notes
 
+        # Validate node input if validation is enabled
+        if self.validate_inputs:
+            try:
+                validated_node = validate_node(node)
+                # Convert back to dict for storage
+                node = validated_node.model_dump()
+                logger.debug(f"Node validated: {name}")
+            except Exception as e:
+                logger.error(f"Node validation failed for '{name}': {e}")
+                raise ValueError(f"Invalid node '{name}': {e}")
+
         self.nodes.append(node)
         logger.debug(f"Added node: {name} ({node_type})")
 
         return self
 
     def add_trigger(
-        self, trigger_type: str, name: str = "Trigger", parameters: Optional[Dict] = None, **kwargs
+        self, trigger_type: str, name: str = "Trigger", parameters: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> "WorkflowBuilder":
         """
         Add a trigger node (convenience method).
@@ -312,7 +366,7 @@ class WorkflowBuilder:
 
         return is_valid, warnings
 
-    def build(self, validate: bool = True) -> Dict:
+    def build(self, validate: bool = True) -> Dict[str, Any]:
         """
         Build and return the complete workflow JSON.
 
@@ -350,18 +404,28 @@ class WorkflowBuilder:
 
         logger.debug(f"Built workflow: {self.name} ({len(self.nodes)} nodes)")
 
-        # Optional validation
+        # Pydantic validation if enabled
+        if self.validate_inputs and validate:
+            try:
+                # Validate the complete workflow structure
+                validated = validate_workflow(workflow)
+                logger.debug("✓ Workflow pydantic validation passed")
+            except Exception as e:
+                logger.error(f"Workflow pydantic validation failed: {e}")
+                raise ValueError(f"Invalid workflow: {e}")
+
+        # Optional schema validation
         if validate:
             try:
                 from parse_n8n_schema import parse_workflow_json
 
                 parsed = parse_workflow_json(workflow, strict=False)
                 if parsed:
-                    logger.debug("✓ Workflow validation passed")
+                    logger.debug("✓ Workflow schema validation passed")
                 else:
-                    logger.warning("✗ Workflow validation failed")
+                    logger.warning("✗ Workflow schema validation failed")
             except ImportError:
-                logger.warning("parse_n8n_schema not available, skipping validation")
+                logger.warning("parse_n8n_schema not available, skipping schema validation")
 
         return workflow
 
@@ -460,7 +524,7 @@ class TemplateLibrary:
         return builder.build()
 
     @staticmethod
-    def etl_pipeline(source_type: str = "database", destination_type: str = "webhook") -> Dict:
+    def etl_pipeline(source_type: str = "database", destination_type: str = "webhook") -> Dict[str, Any]:
         """
         Generate Extract → Transform → Load workflow.
 
@@ -507,7 +571,7 @@ class TemplateLibrary:
         return builder.build()
 
     @staticmethod
-    def api_with_error_handling(api_url: str) -> Dict:
+    def api_with_error_handling(api_url: str) -> Dict[str, Any]:
         """
         Generate API call with error handling and retry logic.
 
@@ -561,7 +625,7 @@ class TemplateLibrary:
 
 
 # Convenience functions
-def generate_from_template(template_name: str, **params) -> Dict:
+def generate_from_template(template_name: str, **params: Any) -> Dict[str, Any]:
     """
     Generate workflow from named template.
 
@@ -585,7 +649,7 @@ def generate_from_template(template_name: str, **params) -> Dict:
     return templates[template_name](**params)
 
 
-def save_workflow(workflow_json: Dict, filepath: str) -> None:
+def save_workflow(workflow_json: Dict[str, Any], filepath: str) -> None:
     """Save workflow JSON to file"""
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(workflow_json, f, indent=2)

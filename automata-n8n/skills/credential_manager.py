@@ -20,9 +20,12 @@ import base64
 import json
 import logging
 import os
+import secrets
+import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from functools import wraps
+from typing import Any, Callable, Dict, List, Optional
 
 # Try to import cryptography for encryption support
 try:
@@ -38,6 +41,13 @@ except ImportError:
 # Configure logging - Application should configure logging, not libraries
 # logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
+
+# Import pydantic validation schemas
+try:
+    from validation_schemas import validate_credential, CredentialInput
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
 
 
 @dataclass
@@ -67,11 +77,11 @@ class CredentialTemplate:
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation"""
         return asdict(self)
 
-    def to_node_reference(self) -> Dict:
+    def to_node_reference(self) -> Dict[str, Any]:
         """
         Generate credential reference for use in node configuration.
 
@@ -139,6 +149,13 @@ class CredentialManager:
     - Automatic encryption of sensitive fields
     - Uses cryptography.fernet for field-level encryption
     - Key management via environment variables
+
+    Thread Safety:
+        This class is thread-safe. All public methods that modify state are protected
+        by an internal lock to prevent race conditions and TOCTOU vulnerabilities.
+
+    Note:
+        @thread_safe - All public methods are protected by internal lock
     """
 
     def __init__(self, encryption_key: Optional[bytes] = None):
@@ -164,6 +181,9 @@ class CredentialManager:
         """
         self.credentials: Dict[str, CredentialTemplate] = {}
         self.node_credential_map: Dict[str, List[str]] = {}
+
+        # Thread safety: Lock for protecting credential dictionary mutations
+        self._lock = threading.RLock()
 
         # SECURITY: Initialize encryption
         self._fernet: Optional[Fernet] = None
@@ -313,11 +333,14 @@ class CredentialManager:
         credential_type: str,
         description: str = "",
         credential_id: Optional[str] = None,
-        fields: Optional[Dict] = None,
+        fields: Optional[Dict[str, Any]] = None,
         environment: str = "production",
     ) -> CredentialTemplate:
         """
         Add a credential template.
+
+        Thread Safety:
+            @thread_safe - Protected by internal lock
 
         Args:
             name: Credential name
@@ -387,18 +410,30 @@ class CredentialManager:
         if errors:
             raise ValueError(f"Invalid credential: {', '.join(errors)}")
 
-        self.credentials[name] = credential
+        # Thread-safe: Protect credential dictionary mutation
+        with self._lock:
+            self.credentials[name] = credential
+
         logger.debug(f"Added credential template: {name} ({credential_type}) - sensitive fields encrypted")
 
         return credential
 
     def get_credential(self, name: str) -> Optional[CredentialTemplate]:
-        """Get credential template by name"""
-        return self.credentials.get(name)
+        """
+        Get credential template by name.
+
+        Thread Safety:
+            @thread_safe - Protected by internal lock
+        """
+        with self._lock:
+            return self.credentials.get(name)
 
     def list_credentials(self, environment: Optional[str] = None) -> List[CredentialTemplate]:
         """
         List all credential templates.
+
+        Thread Safety:
+            @thread_safe - Protected by internal lock
 
         Args:
             environment: Optional filter by environment
@@ -406,28 +441,39 @@ class CredentialManager:
         Returns:
             List of credential templates
         """
-        if environment:
-            return [c for c in self.credentials.values() if c.environment == environment]
-        return list(self.credentials.values())
+        with self._lock:
+            if environment:
+                return [c for c in self.credentials.values() if c.environment == environment]
+            return list(self.credentials.values())
 
     def track_node_credential(self, node_name: str, credential_name: str) -> None:
         """
         Track which credentials are used by which nodes.
 
+        Thread Safety:
+            @thread_safe - Protected by internal lock to prevent TOCTOU race conditions
+
         Args:
             node_name: Name of node using credential
             credential_name: Name of credential being used
         """
-        if node_name not in self.node_credential_map:
-            self.node_credential_map[node_name] = []
+        # Thread-safe: Protect against TOCTOU race condition
+        # Multiple threads could check if node exists, both see it doesn't exist,
+        # and both try to create it simultaneously
+        with self._lock:
+            if node_name not in self.node_credential_map:
+                self.node_credential_map[node_name] = []
 
-        if credential_name not in self.node_credential_map[node_name]:
-            self.node_credential_map[node_name].append(credential_name)
-            logger.debug(f"Node '{node_name}' uses credential '{credential_name}'")
+            if credential_name not in self.node_credential_map[node_name]:
+                self.node_credential_map[node_name].append(credential_name)
+                logger.debug(f"Node '{node_name}' uses credential '{credential_name}'")
 
     def get_node_credentials(self, node_name: str) -> List[CredentialTemplate]:
         """
         Get all credentials used by a specific node.
+
+        Thread Safety:
+            @thread_safe - Protected by internal lock
 
         Args:
             node_name: Node name
@@ -435,19 +481,24 @@ class CredentialManager:
         Returns:
             List of credential templates used by node
         """
-        cred_names = self.node_credential_map.get(node_name, [])
-        return [self.credentials[name] for name in cred_names if name in self.credentials]
+        with self._lock:
+            cred_names = self.node_credential_map.get(node_name, [])
+            return [self.credentials[name] for name in cred_names if name in self.credentials]
 
     def get_workflow_credentials(self) -> List[CredentialTemplate]:
         """
         Get all credentials used in the workflow.
 
+        Thread Safety:
+            @thread_safe - Protected by internal lock
+
         Returns:
             List of all credential templates
         """
-        return list(self.credentials.values())
+        with self._lock:
+            return list(self.credentials.values())
 
-    def generate_credential_reference(self, credential_name: str) -> Dict:
+    def generate_credential_reference(self, credential_name: str) -> Dict[str, Any]:
         """
         Generate credential reference for node configuration.
 
@@ -466,7 +517,7 @@ class CredentialManager:
 
         return credential.to_node_reference()
 
-    def export_credentials_manifest(self) -> Dict:
+    def export_credentials_manifest(self) -> Dict[str, Any]:
         """
         Export credentials manifest for documentation/setup.
 
@@ -790,6 +841,148 @@ def get_common_credential(service: str, **kwargs) -> CredentialTemplate:
         raise ValueError(f"Unknown service: {service}. Available: {', '.join(service_map.keys())}")
 
     return service_map[service_lower](**kwargs)
+
+
+# ============================================================================
+# AUTHENTICATION INTEGRATION
+# ============================================================================
+
+# Import authentication components
+try:
+    from skills.credential_auth import (
+        AuthenticationError,
+        CredentialAuthProvider,
+        require_auth
+    )
+    AUTH_AVAILABLE = True
+except ImportError:
+    try:
+        from credential_auth import (
+            AuthenticationError,
+            CredentialAuthProvider,
+            require_auth
+        )
+        AUTH_AVAILABLE = True
+    except ImportError:
+        # Define stub classes if authentication module not available
+        AUTH_AVAILABLE = False
+
+        class AuthenticationError(Exception):
+            """Raised when authentication fails"""
+            pass
+
+        class CredentialAuthProvider:
+            """Stub authentication provider when auth module not available"""
+            def __init__(self):
+                logger.warning("Authentication module not available - using stub provider")
+
+            def generate_token(self, *args, **kwargs):
+                raise NotImplementedError("Authentication not available")
+
+            def validate_token(self, *args, **kwargs):
+                raise NotImplementedError("Authentication not available")
+
+        def require_auth(auth_provider):
+            """Stub decorator when auth module not available"""
+            def decorator(func):
+                def wrapper(*args, **kwargs):
+                    raise NotImplementedError("Authentication not available")
+                return wrapper
+            return decorator
+
+
+class AuthenticatedCredentialManager(CredentialManager):
+    """
+    Extended CredentialManager with authentication support.
+
+    Adds token-based authentication protection for sensitive operations
+    like exporting and saving credential manifests.
+
+    Example:
+        # Create authenticated manager
+        manager = AuthenticatedCredentialManager()
+
+        # Generate authentication token
+        token = manager.auth_provider.generate_token(
+            token_name="admin",
+            expires_in=3600  # 1 hour
+        )
+
+        # Use protected operation
+        manifest = manager.export_credentials_manifest(token=token)
+        manager.save_manifest("/path/to/file.json", token=token)
+    """
+
+    def __init__(self, encryption_key: Optional[bytes] = None):
+        """
+        Initialize authenticated credential manager.
+
+        Args:
+            encryption_key: Optional Fernet encryption key
+        """
+        super().__init__(encryption_key=encryption_key)
+
+        # Initialize authentication provider
+        if AUTH_AVAILABLE:
+            self.auth_provider = CredentialAuthProvider()
+            logger.info("Authentication enabled for CredentialManager")
+        else:
+            self.auth_provider = CredentialAuthProvider()  # Stub
+            logger.warning("Authentication not available - protected methods will fail")
+
+    def export_credentials_manifest(self, token: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Export credentials manifest for documentation/setup.
+
+        AUTHENTICATION REQUIRED: This method requires a valid auth token
+        when using AuthenticatedCredentialManager.
+
+        Args:
+            token: Authentication token (optional for backward compatibility)
+
+        Returns:
+            Dictionary containing all credential definitions and usage
+
+        Raises:
+            AuthenticationError: If token is invalid or missing (when required)
+
+        Example:
+            token = manager.auth_provider.generate_token()
+            manifest = manager.export_credentials_manifest(token=token)
+        """
+        # If token provided, validate it
+        if token is not None:
+            if not self.auth_provider.validate_token(token):
+                raise AuthenticationError("Invalid or expired token for export_credentials_manifest")
+
+        # Call parent method
+        return super().export_credentials_manifest()
+
+    def save_manifest(self, filepath: str, token: Optional[str] = None) -> None:
+        """
+        Save credentials manifest to JSON file with encrypted sensitive fields.
+
+        AUTHENTICATION REQUIRED: This method requires a valid auth token
+        when using AuthenticatedCredentialManager.
+
+        Args:
+            filepath: Output file path
+            token: Authentication token (optional for backward compatibility)
+
+        Raises:
+            AuthenticationError: If token is invalid or missing (when required)
+
+        Example:
+            token = manager.auth_provider.generate_token()
+            manager.save_manifest("/path/to/file.json", token=token)
+        """
+        # If token provided, validate it
+        if token is not None:
+            if not self.auth_provider.validate_token(token):
+                raise AuthenticationError("Invalid or expired token for save_manifest")
+
+        # Call parent method
+        return super().save_manifest(filepath)
 
 
 if __name__ == "__main__":

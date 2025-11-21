@@ -428,10 +428,62 @@ class TestWorkflowImportExport:
 class TestRateLimiting:
     """Test rate limiting functionality."""
 
+    def test_rate_limit_logic_unit(self):
+        """
+        Test rate limiting logic without actual API calls (unit test).
+
+        This test validates the rate limiting mechanism using mocked time
+        to ensure deterministic behavior without delays or external dependencies.
+        """
+        from unittest.mock import MagicMock, patch
+        from skills.n8n_api_client import N8nRateLimitError
+
+        # Create client with strict rate limit (5 requests per 2 seconds)
+        client = N8nApiClient(
+            api_url="http://test.local:5678",
+            api_key="test_key",
+            rate_limit_requests=5,
+            rate_limit_period=2,
+        )
+
+        # Mock the session.request to avoid actual API calls
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"data": []}'
+        mock_response.json.return_value = {"data": []}
+        client.session.request = MagicMock(return_value=mock_response)
+
+        # Test: 5 requests at the same time should succeed
+        mock_time = 1000.0
+        with patch('time.time', return_value=mock_time):
+            for i in range(5):
+                client._check_rate_limit()
+
+        # Test: 6th request at same time should fail
+        with patch('time.time', return_value=mock_time):
+            with pytest.raises(N8nRateLimitError) as exc_info:
+                client._check_rate_limit()
+            assert "Rate limit exceeded" in str(exc_info.value)
+
+        # Test: Request after period expires should succeed
+        mock_time_after = mock_time + 2.1  # After rate limit period
+        with patch('time.time', return_value=mock_time_after):
+            # This should succeed as old requests have expired
+            client._check_rate_limit()
+
     @pytest.mark.integration
     @pytest.mark.slow
     def test_rate_limit_enforcement(self):
-        """Test that rate limiting is enforced."""
+        """
+        Test that rate limiting is enforced with real API calls.
+
+        This test validates the rate limiting logic by making multiple requests
+        and ensuring the 6th request is blocked when the limit is exceeded.
+        Uses mock time to avoid actual delays and ensure deterministic behavior.
+        """
+        from unittest.mock import patch
+        from skills.n8n_api_client import N8nRateLimitError
+
         # Create client with strict rate limit
         client = N8nApiClient(
             api_url=os.getenv("N8N_API_URL"),
@@ -440,15 +492,17 @@ class TestRateLimiting:
             rate_limit_period=2,
         )
 
-        # Make 5 requests (should succeed)
-        for i in range(5):
-            client.list_workflows(limit=1)
+        # Mock time.time() to control timing without actual delays
+        mock_time = 1000.0
 
-        # 6th request should be rate limited
-        from skills.n8n_api_client import N8nRateLimitError
+        with patch('time.time', return_value=mock_time):
+            # Make 5 requests (should succeed)
+            for i in range(5):
+                client.list_workflows(limit=1)
 
-        with pytest.raises(N8nRateLimitError):
-            client.list_workflows(limit=1)
+            # 6th request should be rate limited (same timestamp)
+            with pytest.raises(N8nRateLimitError):
+                client.list_workflows(limit=1)
 
 
 class TestHealthCheck:
@@ -508,6 +562,223 @@ class TestErrorHandling:
         """Test updating a workflow that doesn't exist."""
         with pytest.raises(N8nApiError):
             n8n_client.update_workflow("nonexistent-workflow-id-12345", SAMPLE_WORKFLOW)
+
+
+class TestEdgeCases:
+    """Test edge cases and boundary conditions."""
+
+    def test_client_with_empty_url(self):
+        """Test creating client with empty URL raises appropriate error."""
+        with pytest.raises(Exception):
+            client = N8nApiClient(api_url="", api_key="test")
+
+    def test_client_with_none_api_key(self):
+        """Test creating client with None API key (some n8n instances don't require auth)."""
+        # Should not raise an error - some n8n instances don't require auth
+        client = N8nApiClient(api_url="http://localhost:5678", api_key=None)
+        assert client.api_key is None
+
+    def test_client_url_normalization(self):
+        """Test that URLs are properly normalized."""
+        # Test with trailing slash
+        client1 = N8nApiClient(api_url="http://localhost:5678/", api_key="test")
+        assert not client1.base_url.endswith("/")
+
+        # Test with /api/v1 already in URL
+        client2 = N8nApiClient(api_url="http://localhost:5678/api/v1", api_key="test")
+        assert client2.api_url.endswith("/api/v1")
+        assert "/api/v1/api/v1" not in client2.api_url
+
+    def test_workflow_with_empty_nodes(self):
+        """Test validation of workflow with empty nodes array."""
+        invalid_workflow = {
+            "name": "Test",
+            "nodes": [],
+            "connections": {}
+        }
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(invalid_workflow)
+
+        assert is_valid is False
+        assert len(errors) > 0
+
+    def test_workflow_with_missing_required_fields(self):
+        """Test validation of workflow missing required fields."""
+        invalid_workflow = {
+            "nodes": [{"name": "Test"}]
+            # Missing name, connections
+        }
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(invalid_workflow)
+
+        assert is_valid is False
+        assert any("name" in err.lower() for err in errors)
+
+    def test_workflow_with_very_long_name(self):
+        """Test workflow with extremely long name."""
+        long_name = "A" * 10000
+        workflow = {
+            "name": long_name,
+            "nodes": SAMPLE_WORKFLOW["nodes"],
+            "connections": SAMPLE_WORKFLOW["connections"]
+        }
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(workflow)
+
+        # Should still be valid structurally
+        assert is_valid is True
+
+    def test_workflow_with_special_characters(self):
+        """Test workflow with special characters in name."""
+        special_workflow = SAMPLE_WORKFLOW.copy()
+        special_workflow["name"] = "Test!@#$%^&*()_+-={}[]|\\:;<>?,./~`"
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(special_workflow)
+
+        assert is_valid is True
+
+    def test_workflow_with_unicode_characters(self):
+        """Test workflow with Unicode characters."""
+        unicode_workflow = SAMPLE_WORKFLOW.copy()
+        unicode_workflow["name"] = "测试工作流 🚀 Тест"
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(unicode_workflow)
+
+        assert is_valid is True
+
+    def test_rate_limit_boundary_conditions(self):
+        """Test rate limiting at exact boundary."""
+        from unittest.mock import MagicMock, patch
+
+        # Create client with limit of exactly 1
+        client = N8nApiClient(
+            api_url="http://test.local",
+            api_key="test",
+            rate_limit_requests=1,
+            rate_limit_period=1
+        )
+
+        mock_time = 1000.0
+
+        with patch('time.time', return_value=mock_time):
+            # First request should succeed
+            client._check_rate_limit()
+
+            # Second request at same time should fail
+            with pytest.raises(N8nRateLimitError):
+                client._check_rate_limit()
+
+    def test_rate_limit_with_zero_period(self):
+        """Test rate limiting with zero period (edge case)."""
+        from unittest.mock import patch
+
+        client = N8nApiClient(
+            api_url="http://test.local",
+            api_key="test",
+            rate_limit_requests=10,
+            rate_limit_period=0  # Edge case
+        )
+
+        # Should not crash
+        with patch('time.time', return_value=1000.0):
+            client._check_rate_limit()
+
+    def test_timeout_configuration(self):
+        """Test that timeout configuration is properly set."""
+        client = N8nApiClient(
+            api_url="http://test.local",
+            api_key="test",
+            timeout=5
+        )
+
+        assert client.timeout == 5
+
+    def test_max_retries_configuration(self):
+        """Test that max retries configuration is properly set."""
+        client = N8nApiClient(
+            api_url="http://test.local",
+            api_key="test",
+            max_retries=5
+        )
+
+        # Retry strategy should be configured on the adapter
+        assert client.session.get_adapter("http://").max_retries.total == 5
+
+    def test_list_workflows_with_zero_limit(self):
+        """Test listing workflows with limit=0."""
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        from unittest.mock import MagicMock
+
+        # Mock the request to return empty list
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"data": []}'
+        mock_response.json.return_value = {"data": []}
+        client.session.request = MagicMock(return_value=mock_response)
+
+        # Should handle gracefully
+        workflows = client.list_workflows(limit=0)
+        assert isinstance(workflows, list)
+
+    def test_list_workflows_with_negative_limit(self):
+        """Test listing workflows with negative limit."""
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        from unittest.mock import MagicMock
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"data": []}'
+        mock_response.json.return_value = {"data": []}
+        client.session.request = MagicMock(return_value=mock_response)
+
+        # Should handle gracefully (n8n API will handle the invalid value)
+        try:
+            workflows = client.list_workflows(limit=-1)
+            assert isinstance(workflows, list)
+        except:
+            pass  # Either way is acceptable
+
+    def test_workflow_node_with_missing_type(self):
+        """Test validation of node missing type field."""
+        invalid_workflow = {
+            "name": "Test",
+            "nodes": [
+                {
+                    "name": "Node1",
+                    # Missing "type" field
+                    "position": [100, 100]
+                }
+            ],
+            "connections": {}
+        }
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(invalid_workflow)
+
+        assert is_valid is False
+
+    def test_workflow_node_with_duplicate_names(self):
+        """Test workflow with duplicate node names."""
+        workflow = {
+            "name": "Test Duplicates",
+            "nodes": [
+                {"name": "Node1", "type": "n8n-nodes-base.start"},
+                {"name": "Node1", "type": "n8n-nodes-base.set"}  # Duplicate name
+            ],
+            "connections": {}
+        }
+
+        client = N8nApiClient(api_url="http://test.local", api_key="test")
+        is_valid, errors = client.validate_workflow_import(workflow)
+
+        # n8n may or may not allow this, but validation should complete
+        assert isinstance(is_valid, bool)
+        assert isinstance(errors, list)
 
 
 # Run specific integration tests

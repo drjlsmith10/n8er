@@ -367,12 +367,7 @@ class TestCombinedOperations:
 
 
 # Performance benchmark summary
-def pytest_runtest_makereport(item, call):
-    """Hook to add performance metrics to test reports"""
-    if "test_" in item.name and call.when == "call":
-        duration = call.stop - call.start
-        if duration > 0.5:
-            logger.warning(f"SLOW TEST: {item.name} took {duration:.3f}s")
+# Note: pytest hooks are now in conftest.py for proper registration
 
 
 if __name__ == "__main__":

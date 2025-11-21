@@ -13,7 +13,14 @@ import json
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+# Import pydantic validation schemas
+try:
+    from validation_schemas import validate_node, NodeInput
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
 
 # Configure logging for reasoning traces
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -43,8 +50,8 @@ class N8nNode:
     type: str
     type_version: int
     position: Tuple[float, float]
-    parameters: Dict
-    credentials: Optional[Dict] = None
+    parameters: Dict[str, Any]
+    credentials: Optional[Dict[str, Any]] = None
     disabled: bool = False
     notes: str = ""
 
@@ -94,7 +101,7 @@ class WorkflowMetadata:
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     tags: List[str] = field(default_factory=list)
-    settings: Dict = field(default_factory=dict)
+    settings: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -109,7 +116,7 @@ class ParsedWorkflow:
     metadata: WorkflowMetadata
     nodes: Dict[str, N8nNode]
     connections: List[N8nConnection]
-    raw_json: Dict
+    raw_json: Dict[str, Any]
 
     # Computed properties
     node_count: int = 0
@@ -201,6 +208,24 @@ class N8nSchemaParser:
     - Perform schema validation
     - Build structured ParsedWorkflow object
 
+    Thread Safety:
+        This class is NOT thread-safe for shared instance usage.
+        Parser instances maintain mutable state (errors, warnings) during parsing.
+
+        RECOMMENDATION: Create a new parser instance for each parsing operation.
+        Do NOT share parser instances between threads.
+
+    Example (Thread-Safe Usage):
+        # Good: Each thread creates its own parser
+        def worker():
+            parser = N8nSchemaParser()
+            result = parser.parse_file("workflow.json")
+
+        # Bad: Sharing parser between threads
+        parser = N8nSchemaParser()  # DON'T DO THIS
+        with ThreadPoolExecutor() as executor:
+            executor.map(parser.parse_file, file_list)  # NOT THREAD-SAFE
+
     Reasoning: Single responsibility parser with comprehensive validation
     """
 
@@ -211,6 +236,10 @@ class N8nSchemaParser:
         Args:
             strict_mode: If True, raise exceptions on validation errors.
                         If False, log warnings and continue parsing.
+
+        Note:
+            Parser instances are designed for single-use and are NOT thread-safe.
+            Create a new parser instance for each parsing operation in multi-threaded code.
         """
         self.strict_mode = strict_mode
         self.errors: List[str] = []
@@ -239,7 +268,7 @@ class N8nSchemaParser:
             self._handle_error(f"Invalid JSON: {e}")
             return None
 
-    def parse_json(self, workflow_json: Dict) -> Optional[ParsedWorkflow]:
+    def parse_json(self, workflow_json: Dict[str, Any]) -> Optional[ParsedWorkflow]:
         """
         Parse n8n workflow from dictionary.
 
@@ -290,7 +319,7 @@ class N8nSchemaParser:
         logger.debug(f"Successfully parsed workflow: {metadata.name} ({len(nodes)} nodes)")
         return parsed
 
-    def _validate_basic_structure(self, workflow_json: Dict) -> bool:
+    def _validate_basic_structure(self, workflow_json: Dict[str, Any]) -> bool:
         """
         Validate that JSON has required top-level fields.
 
@@ -309,7 +338,7 @@ class N8nSchemaParser:
 
         return True
 
-    def _extract_metadata(self, workflow_json: Dict) -> WorkflowMetadata:
+    def _extract_metadata(self, workflow_json: Dict[str, Any]) -> WorkflowMetadata:
         """Extract workflow-level metadata"""
         metadata = WorkflowMetadata(
             name=workflow_json.get("name", "Untitled Workflow"),
@@ -369,7 +398,7 @@ class N8nSchemaParser:
 
         return nodes
 
-    def _parse_node(self, node_data: Dict) -> N8nNode:
+    def _parse_node(self, node_data: Dict[str, Any]) -> N8nNode:
         """Parse a single node from JSON"""
         # Validate required fields
         required = ["name", "type", "typeVersion", "position"]
@@ -390,7 +419,7 @@ class N8nSchemaParser:
         )
 
     def _extract_connections(
-        self, workflow_json: Dict, nodes: Dict[str, N8nNode]
+        self, workflow_json: Dict[str, Any], nodes: Dict[str, N8nNode]
     ) -> List[N8nConnection]:
         """
         Extract and validate connections between nodes.
@@ -536,7 +565,7 @@ def parse_workflow_file(filepath: str, strict: bool = True) -> Optional[ParsedWo
     return parser.parse_file(filepath)
 
 
-def parse_workflow_json(workflow_json: Dict, strict: bool = True) -> Optional[ParsedWorkflow]:
+def parse_workflow_json(workflow_json: Dict[str, Any], strict: bool = True) -> Optional[ParsedWorkflow]:
     """
     Parse n8n workflow from dictionary.
 

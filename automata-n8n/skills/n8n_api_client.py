@@ -1,63 +1,63 @@
 """
-n8n API Client
+n8n API Client (Refactored with Facade Pattern)
 
 Provides a Python client for interacting with n8n REST API.
 Supports workflow import/export, version detection, and validation.
 
-Author: Project Automata - Agent 3
-Version: 1.0.0
+Author: Project Automata - Architecture Specialist
+Version: 2.0.0 (Refactored)
 Created: 2025-11-20
+Updated: 2025-11-21 (Architecture refactoring)
 
 API Documentation: https://docs.n8n.io/api/
 Authentication: X-N8N-API-KEY header
+
+Architecture:
+- N8nApiClient: Facade pattern that delegates to specialized clients
+- WorkflowClient: Workflow CRUD operations
+- ExecutionClient: Execution operations
+- HealthClient: Health checks and version detection
+- BaseN8nClient: Shared HTTP/session management
+
+Breaking Changes from v1.0.0:
+- None (backward compatible facade)
+
+Deprecations:
+- Direct instantiation of clients other than N8nApiClient is discouraged
+  but supported for advanced use cases
 """
 
 import logging
-import time
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+# Import exception classes from base client
+from .n8n.base_client import (
+    N8nApiError,
+    N8nAuthenticationError,
+    N8nConnectionError,
+    N8nValidationError,
+    N8nRateLimitError,
+)
+
+# Import specialized clients
+from .n8n.workflow_client import WorkflowClient
+from .n8n.execution_client import ExecutionClient
+from .n8n.health_client import HealthClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-class N8nApiError(Exception):
-    """Base exception for n8n API errors"""
-
-    pass
-
-
-class N8nAuthenticationError(N8nApiError):
-    """Raised when authentication fails"""
-
-    pass
-
-
-class N8nConnectionError(N8nApiError):
-    """Raised when connection to n8n fails"""
-
-    pass
-
-
-class N8nValidationError(N8nApiError):
-    """Raised when workflow validation fails"""
-
-    pass
-
-
-class N8nRateLimitError(N8nApiError):
-    """Raised when rate limit is exceeded"""
-
-    pass
-
-
 class N8nApiClient:
     """
-    Client for interacting with n8n REST API.
+    Facade for interacting with n8n REST API.
+
+    This class delegates to specialized clients:
+    - WorkflowClient: For workflow operations
+    - ExecutionClient: For execution operations
+    - HealthClient: For health/version operations
 
     Features:
     - Workflow import/export
@@ -65,6 +65,11 @@ class N8nApiClient:
     - Validation
     - Error handling with retry logic
     - Rate limiting support
+
+    Thread Safety:
+        All clients are thread-safe for rate limiting.
+        However, requests.Session is NOT inherently thread-safe.
+        For multi-threaded applications, create one client instance per thread.
 
     Example:
         client = N8nApiClient(api_url="http://localhost:5678", api_key="your-key")
@@ -82,132 +87,57 @@ class N8nApiClient:
         rate_limit_period: int = 60,
     ):
         """
-        Initialize n8n API client.
+        Initialize n8n API client (facade).
 
         Args:
-            api_url: Base URL of n8n API (e.g., "http://localhost:5678" or "https://n8n.example.com")
+            api_url: Base URL of n8n API (e.g., "http://localhost:5678")
             api_key: n8n API key (from Settings > n8n API)
             timeout: Request timeout in seconds
             max_retries: Maximum number of retry attempts
             rate_limit_requests: Maximum requests per period
             rate_limit_period: Rate limit period in seconds
         """
-        # Clean up API URL - remove trailing slash and /api/v1 if present
-        self.base_url = api_url.rstrip("/")
-        if self.base_url.endswith("/api/v1"):
-            self.base_url = self.base_url[:-7]
-
-        self.api_url = f"{self.base_url}/api/v1"
+        # Store configuration
+        self.api_url = api_url
         self.api_key = api_key
         self.timeout = timeout
-
-        # Rate limiting
+        self.max_retries = max_retries
         self.rate_limit_requests = rate_limit_requests
         self.rate_limit_period = rate_limit_period
-        self._request_times: List[float] = []
 
-        # Configure session with retry logic
-        self.session = requests.Session()
-        retry_strategy = Retry(
-            total=max_retries,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        # Set default headers
-        self.session.headers.update(
-            {"Accept": "application/json", "Content-Type": "application/json"}
+        # Initialize specialized clients with shared configuration
+        self._workflow_client = WorkflowClient(
+            api_url=api_url,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+            rate_limit_requests=rate_limit_requests,
+            rate_limit_period=rate_limit_period,
         )
 
-        if self.api_key:
-            self.session.headers.update({"X-N8N-API-KEY": self.api_key})
+        self._execution_client = ExecutionClient(
+            api_url=api_url,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+            rate_limit_requests=rate_limit_requests,
+            rate_limit_period=rate_limit_period,
+        )
 
-        logger.debug(f"Initialized n8n API client for {self.api_url}")
+        self._health_client = HealthClient(
+            api_url=api_url,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+            rate_limit_requests=rate_limit_requests,
+            rate_limit_period=rate_limit_period,
+        )
 
-    def _check_rate_limit(self):
-        """Check and enforce rate limiting."""
-        now = time.time()
+        logger.debug(f"Initialized n8n API client facade for {api_url}")
 
-        # Remove requests outside the current period
-        self._request_times = [t for t in self._request_times if now - t < self.rate_limit_period]
-
-        # Check if we've exceeded the limit
-        if len(self._request_times) >= self.rate_limit_requests:
-            oldest_request = self._request_times[0]
-            wait_time = self.rate_limit_period - (now - oldest_request)
-            if wait_time > 0:
-                logger.warning(f"Rate limit reached, waiting {wait_time:.2f}s")
-                raise N8nRateLimitError(
-                    f"Rate limit exceeded. Wait {wait_time:.2f}s before retrying."
-                )
-
-        # Record this request
-        self._request_times.append(now)
-
-    def _request(
-        self, method: str, endpoint: str, data: Optional[Dict] = None, params: Optional[Dict] = None
-    ) -> Dict[str, Any]:
-        """
-        Make HTTP request to n8n API with error handling.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint (without /api/v1 prefix)
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Response JSON data
-
-        Raises:
-            N8nAuthenticationError: If authentication fails
-            N8nConnectionError: If connection fails
-            N8nApiError: For other API errors
-        """
-        self._check_rate_limit()
-
-        url = f"{self.api_url}/{endpoint.lstrip('/')}"
-
-        try:
-            logger.debug(f"{method} {url}")
-            response = self.session.request(
-                method=method, url=url, json=data, params=params, timeout=self.timeout
-            )
-
-            # Handle authentication errors
-            if response.status_code == 401:
-                raise N8nAuthenticationError("Authentication failed. Check your API key.")
-
-            # Handle rate limiting
-            if response.status_code == 429:
-                raise N8nRateLimitError("Rate limit exceeded. Please wait before retrying.")
-
-            # Raise for other HTTP errors
-            response.raise_for_status()
-
-            # Return JSON response if available
-            if response.content:
-                return response.json()
-            return {}
-
-        except requests.exceptions.Timeout:
-            raise N8nConnectionError(f"Request timeout after {self.timeout}s")
-
-        except requests.exceptions.ConnectionError as e:
-            raise N8nConnectionError(f"Connection failed: {str(e)}")
-
-        except requests.exceptions.HTTPError:
-            error_msg = f"HTTP {response.status_code}: {response.text}"
-            logger.error(error_msg)
-            raise N8nApiError(error_msg)
-
-        except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
-            raise N8nApiError(f"Unexpected error: {str(e)}")
+    # ========================================================================
+    # Health and Connection Methods (delegate to HealthClient)
+    # ========================================================================
 
     def test_connection(self) -> Tuple[bool, str]:
         """
@@ -216,68 +146,33 @@ class N8nApiClient:
         Returns:
             Tuple of (success: bool, message: str)
         """
-        try:
-            # Try to get workflows list as a simple connectivity test
-            self._request("GET", "/workflows", params={"limit": 1})
-            return True, "Connection successful"
-        except N8nAuthenticationError as e:
-            return False, f"Authentication failed: {str(e)}"
-        except N8nConnectionError as e:
-            return False, f"Connection failed: {str(e)}"
-        except Exception as e:
-            return False, f"Error: {str(e)}"
+        return self._health_client.test_connection()
 
     def get_n8n_version(self) -> Dict[str, Any]:
         """
         Detect n8n instance version.
 
         Returns:
-            Dictionary with version information:
-            {
-                "version": "1.70.0",
-                "success": True,
-                "method": "workflows_list"  # Method used to detect version
-            }
+            Dictionary with version information
 
         Note:
             n8n doesn't have a dedicated version endpoint in all versions.
             This method tries multiple approaches to detect the version.
         """
-        try:
-            # Method 1: Try to get version from root endpoint
-            try:
-                response = self.session.get(f"{self.base_url}/", timeout=self.timeout)
-                if response.ok and "n8n" in response.text.lower():
-                    # Try to extract version from HTML/response
-                    import re
+        return self._health_client.get_version()
 
-                    version_match = re.search(
-                        r'version["\s:]+([0-9.]+)', response.text, re.IGNORECASE
-                    )
-                    if version_match:
-                        return {
-                            "version": version_match.group(1),
-                            "success": True,
-                            "method": "root_endpoint",
-                        }
-            except Exception:
-                pass
+    def health_check(self) -> Dict[str, Any]:
+        """
+        Perform comprehensive health check.
 
-            # Method 2: Check if workflows endpoint is available (indicates API is working)
-            self._request("GET", "/workflows", params={"limit": 1})
+        Returns:
+            Dictionary with health check results
+        """
+        return self._health_client.health_check()
 
-            # If we can access workflows, API is working
-            # We can infer version based on available features
-            return {
-                "version": "1.x",  # Generic version if specific version unavailable
-                "success": True,
-                "method": "workflows_list",
-                "note": "Exact version detection unavailable. API is functional.",
-            }
-
-        except Exception as e:
-            logger.warning(f"Could not detect n8n version: {str(e)}")
-            return {"version": "unknown", "success": False, "error": str(e)}
+    # ========================================================================
+    # Workflow Methods (delegate to WorkflowClient)
+    # ========================================================================
 
     def list_workflows(
         self,
@@ -296,18 +191,7 @@ class N8nApiClient:
         Returns:
             List of workflow objects
         """
-        params = {}
-        if limit is not None:
-            params["limit"] = limit
-        if active is not None:
-            params["active"] = str(active).lower()
-        if tags:
-            params["tags"] = ",".join(tags)
-
-        response = self._request("GET", "/workflows", params=params)
-
-        # Response structure: {"data": [...]}
-        return response.get("data", [])
+        return self._workflow_client.list_workflows(limit=limit, active=active, tags=tags)
 
     def get_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
@@ -319,7 +203,7 @@ class N8nApiClient:
         Returns:
             Workflow object
         """
-        return self._request("GET", f"/workflows/{workflow_id}")
+        return self._workflow_client.get_workflow(workflow_id)
 
     def import_workflow(
         self, workflow_data: Dict[str, Any], activate: bool = False
@@ -338,26 +222,7 @@ class N8nApiClient:
             N8nValidationError: If workflow validation fails
             N8nApiError: If import fails
         """
-        # Validate basic structure
-        if not isinstance(workflow_data, dict):
-            raise N8nValidationError("Workflow data must be a dictionary")
-
-        if "nodes" not in workflow_data:
-            raise N8nValidationError("Workflow must contain 'nodes' field")
-
-        if "connections" not in workflow_data:
-            raise N8nValidationError("Workflow must contain 'connections' field")
-
-        # Set active status
-        workflow_data["active"] = activate
-
-        try:
-            response = self._request("POST", "/workflows", data=workflow_data)
-            logger.info(f"Imported workflow: {response.get('name', 'Unknown')}")
-            return response
-        except N8nApiError as e:
-            logger.error(f"Failed to import workflow: {str(e)}")
-            raise
+        return self._workflow_client.import_workflow(workflow_data, activate=activate)
 
     def export_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
@@ -369,9 +234,7 @@ class N8nApiClient:
         Returns:
             Workflow JSON object
         """
-        workflow = self.get_workflow(workflow_id)
-        logger.info(f"Exported workflow: {workflow.get('name', 'Unknown')}")
-        return workflow
+        return self._workflow_client.export_workflow(workflow_id)
 
     def update_workflow(self, workflow_id: str, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -384,9 +247,7 @@ class N8nApiClient:
         Returns:
             Updated workflow object
         """
-        response = self._request("PUT", f"/workflows/{workflow_id}", data=workflow_data)
-        logger.info(f"Updated workflow: {workflow_id}")
-        return response
+        return self._workflow_client.update_workflow(workflow_id, workflow_data)
 
     def delete_workflow(self, workflow_id: str) -> bool:
         """
@@ -398,9 +259,7 @@ class N8nApiClient:
         Returns:
             True if deletion successful
         """
-        self._request("DELETE", f"/workflows/{workflow_id}")
-        logger.info(f"Deleted workflow: {workflow_id}")
-        return True
+        return self._workflow_client.delete_workflow(workflow_id)
 
     def activate_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
@@ -411,16 +270,8 @@ class N8nApiClient:
 
         Returns:
             Updated workflow object
-
-        Note:
-            Uses PATCH to atomically update only the 'active' field,
-            avoiding TOCTOU (Time-Of-Check-Time-Of-Use) race conditions.
         """
-        # Use PATCH to atomically update just the 'active' field
-        # This avoids race condition from GET → modify → PUT pattern
-        response = self._request("PATCH", f"/workflows/{workflow_id}", data={"active": True})
-        logger.info(f"Activated workflow: {workflow_id}")
-        return response
+        return self._workflow_client.activate_workflow(workflow_id)
 
     def deactivate_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
@@ -431,16 +282,8 @@ class N8nApiClient:
 
         Returns:
             Updated workflow object
-
-        Note:
-            Uses PATCH to atomically update only the 'active' field,
-            avoiding TOCTOU (Time-Of-Check-Time-Of-Use) race conditions.
         """
-        # Use PATCH to atomically update just the 'active' field
-        # This avoids race condition from GET → modify → PUT pattern
-        response = self._request("PATCH", f"/workflows/{workflow_id}", data={"active": False})
-        logger.info(f"Deactivated workflow: {workflow_id}")
-        return response
+        return self._workflow_client.deactivate_workflow(workflow_id)
 
     def validate_workflow_import(self, workflow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         """
@@ -452,38 +295,11 @@ class N8nApiClient:
         Returns:
             Tuple of (is_valid: bool, errors: List[str])
         """
-        errors = []
+        return self._workflow_client.validate_workflow_import(workflow_data)
 
-        # Check required fields
-        required_fields = ["name", "nodes", "connections"]
-        for field in required_fields:
-            if field not in workflow_data:
-                errors.append(f"Missing required field: {field}")
-
-        # Validate nodes
-        if "nodes" in workflow_data:
-            if not isinstance(workflow_data["nodes"], list):
-                errors.append("'nodes' must be a list")
-            elif len(workflow_data["nodes"]) == 0:
-                errors.append("Workflow must have at least one node")
-            else:
-                # Check each node
-                for i, node in enumerate(workflow_data["nodes"]):
-                    if not isinstance(node, dict):
-                        errors.append(f"Node {i} is not a dictionary")
-                        continue
-
-                    node_required = ["name", "type", "position", "parameters"]
-                    for field in node_required:
-                        if field not in node:
-                            errors.append(f"Node {i} missing required field: {field}")
-
-        # Validate connections
-        if "connections" in workflow_data:
-            if not isinstance(workflow_data["connections"], dict):
-                errors.append("'connections' must be a dictionary")
-
-        return len(errors) == 0, errors
+    # ========================================================================
+    # Execution Methods (delegate to ExecutionClient)
+    # ========================================================================
 
     def test_workflow_execution(
         self, workflow_id: str, input_data: Optional[Dict[str, Any]] = None
@@ -500,61 +316,65 @@ class N8nApiClient:
         Returns:
             Execution result
         """
-        # Note: Workflow execution via API may require specific n8n configuration
-        # and may not be available in all versions
-        try:
-            endpoint = f"/workflows/{workflow_id}/execute"
-            data = input_data or {}
-            response = self._request("POST", endpoint, data=data)
-            logger.info(f"Executed workflow: {workflow_id}")
-            return response
-        except N8nApiError as e:
-            logger.warning(f"Workflow execution not available or failed: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e),
-                "note": "Workflow execution via API may not be available in your n8n version",
-            }
+        return self._execution_client.execute_workflow(workflow_id, input_data)
 
-    def health_check(self) -> Dict[str, Any]:
+    def execute_workflow(
+        self, workflow_id: str, input_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
-        Perform comprehensive health check.
+        Execute a workflow (alias for test_workflow_execution for consistency).
+
+        Args:
+            workflow_id: Workflow ID to execute
+            input_data: Optional input data for the workflow
 
         Returns:
-            Dictionary with health check results
+            Execution result
         """
-        results = {"timestamp": time.time(), "checks": {}}
+        return self._execution_client.execute_workflow(workflow_id, input_data)
 
-        # Test connection
-        conn_ok, conn_msg = self.test_connection()
-        results["checks"]["connection"] = {
-            "status": "ok" if conn_ok else "error",
-            "message": conn_msg,
-        }
+    def get_execution(self, execution_id: str) -> Dict[str, Any]:
+        """
+        Get details of a specific execution.
 
-        # Test version detection
-        version_info = self.get_n8n_version()
-        results["checks"]["version"] = {
-            "status": "ok" if version_info.get("success") else "warning",
-            "version": version_info.get("version", "unknown"),
-            "method": version_info.get("method", "none"),
-        }
+        Args:
+            execution_id: Execution ID
 
-        # Test workflow listing
-        try:
-            workflows = self.list_workflows(limit=1)
-            results["checks"]["workflows"] = {
-                "status": "ok",
-                "message": f"Can access workflows (found {len(workflows)})",
-            }
-        except Exception as e:
-            results["checks"]["workflows"] = {"status": "error", "message": str(e)}
+        Returns:
+            Execution details
+        """
+        return self._execution_client.get_execution(execution_id)
 
-        # Overall status
-        all_ok = all(check["status"] == "ok" for check in results["checks"].values())
-        results["overall_status"] = "healthy" if all_ok else "degraded"
+    def delete_execution(self, execution_id: str) -> bool:
+        """
+        Delete an execution.
 
-        return results
+        Args:
+            execution_id: Execution ID to delete
+
+        Returns:
+            True if deletion successful
+        """
+        return self._execution_client.delete_execution(execution_id)
+
+    # ========================================================================
+    # Direct Client Access (for advanced use cases)
+    # ========================================================================
+
+    @property
+    def workflow_client(self) -> WorkflowClient:
+        """Get direct access to WorkflowClient for advanced use cases."""
+        return self._workflow_client
+
+    @property
+    def execution_client(self) -> ExecutionClient:
+        """Get direct access to ExecutionClient for advanced use cases."""
+        return self._execution_client
+
+    @property
+    def health_client(self) -> HealthClient:
+        """Get direct access to HealthClient for advanced use cases."""
+        return self._health_client
 
 
 # Convenience function for quick testing
@@ -583,7 +403,7 @@ def create_client_from_env() -> Optional[N8nApiClient]:
 
 if __name__ == "__main__":
     # Example usage
-    print("n8n API Client")
+    print("n8n API Client v2.0.0 (Refactored)")
     print("=" * 50)
 
     client = create_client_from_env()
@@ -619,3 +439,4 @@ if __name__ == "__main__":
             print(f"   - {check_name}: {check_result['status']}")
 
     print("\n" + "=" * 50)
+    print("Refactoring complete - using facade pattern with specialized clients")

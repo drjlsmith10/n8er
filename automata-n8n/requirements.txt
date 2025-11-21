@@ -41,5 +41,5 @@ markdown>=3.4.0
 # alembic>=1.11.0
 
 # Optional: Monitoring (future)
-# prometheus-client>=0.17.0
+prometheus-client>=0.17.0
 # sentry-sdk>=1.28.0
