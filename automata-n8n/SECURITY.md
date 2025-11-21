@@ -201,6 +201,116 @@ Before submitting code:
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 - [n8n Security Documentation](https://docs.n8n.io/hosting/security/)
 
+## Advanced Security Considerations
+
+### AI/ML Safety
+
+Project Automata uses AI to generate workflows. Additional security considerations:
+
+1. **Prompt Injection Prevention**
+   - Validate and sanitize all user prompts
+   - Use input filtering to prevent malicious instructions
+   - Test generated workflows for unexpected behavior
+   - Monitor for patterns in generated code
+
+2. **AI Output Validation**
+   - Never execute untrusted AI-generated code directly
+   - Always review generated workflows before deployment
+   - Implement approval workflows for complex operations
+   - Log all AI-generated content for audit
+
+3. **Model Security**
+   - Keep LLM models up to date
+   - Monitor for adversarial examples
+   - Validate model outputs for security implications
+   - Test with known attack patterns
+
+### Supply Chain Security
+
+1. **Dependency Management**
+   ```bash
+   # Regular dependency audits
+   pip install safety
+   safety check
+
+   # Update dependencies regularly
+   pip install --upgrade pip setuptools
+   pip list --outdated
+   ```
+
+2. **Version Pinning**
+   - All dependencies pinned in requirements.txt
+   - Use pip-audit for vulnerability scanning
+   - Review dependency licenses
+   - Keep audit logs of dependency changes
+
+3. **Build Process**
+   - All builds from verified source
+   - CI/CD pipeline includes security checks
+   - Artifacts signed when released
+   - Reproducible builds
+
+### Runtime Security
+
+1. **Resource Limits**
+   - Limit workflow execution time
+   - Limit memory usage per workflow
+   - Prevent infinite loops
+   - Monitor resource consumption
+
+2. **Execution Isolation**
+   - Run workflows with minimal privileges
+   - Use containerization for isolation
+   - Implement security groups for network access
+   - Log all execution events
+
+3. **Error Handling**
+   - Catch all exceptions
+   - Log without exposing sensitive data
+   - Provide safe error messages to users
+   - Implement circuit breakers for external calls
+
+### Monitoring and Alerting
+
+1. **Security Monitoring**
+   - Monitor for failed authentication attempts
+   - Alert on unusual API access patterns
+   - Track sensitive data access
+   - Monitor for suspicious workflow patterns
+
+2. **Audit Logging**
+   - Log all administrative actions
+   - Track all credential usage
+   - Record workflow deployments
+   - Monitor for policy violations
+
+3. **Incident Response**
+   - Have incident response plan
+   - Clear escalation procedures
+   - Regular incident drills
+   - Post-incident reviews
+
+### Cryptography Best Practices
+
+1. **Encryption in Transit**
+   ```python
+   # Always use HTTPS/TLS for external calls
+   import requests
+   response = requests.get(url, verify=True)  # Certificate verification enabled
+   ```
+
+2. **Encryption at Rest**
+   - Sensitive data encrypted with AES-256
+   - Encryption keys stored securely
+   - Key rotation policy in place
+   - No plaintext sensitive data
+
+3. **Hash Algorithms**
+   - Use SHA-256 or stronger
+   - Use salted hashes for passwords
+   - Never use MD5 or SHA-1 for security
+   - Use proper HMAC implementations
+
 ## Contact
 
 For security concerns that are not vulnerabilities (questions, clarifications, etc.):
@@ -208,7 +318,47 @@ For security concerns that are not vulnerabilities (questions, clarifications, e
 - Tag with `security` label
 - Email: support@projectautomata.dev
 
+## Security Audit
+
+Project Automata undergoes regular security audits:
+
+- **Q1 2025**: Comprehensive security audit
+- **Annual**: Regular security assessment
+- **On-demand**: Security review for critical changes
+
+See [SECURITY_AUDIT_PLAN.md](SECURITY_AUDIT_PLAN.md) for audit details.
+
+## Incident Response
+
+If you discover a potential security incident:
+
+1. **Do not** publicly disclose
+2. **Document** the incident
+3. **Report** immediately via security channels
+4. **Preserve** evidence and logs
+5. **Cooperate** with investigation
+
+Response times:
+- Critical: 24 hours initial response
+- High: 48 hours initial response
+- Medium/Low: 5 business days
+
+## Security Roadmap
+
+Future security improvements:
+
+- [ ] Add Web Application Firewall (WAF)
+- [ ] Implement distributed rate limiting
+- [ ] Add security headers (HSTS, CSP, etc.)
+- [ ] Implement API gateway authentication
+- [ ] Add security scanning in CI/CD pipeline
+- [ ] Implement security monitoring dashboard
+- [ ] Add vulnerability disclosure program
+- [ ] Conduct annual penetration testing
+- [ ] Implement bug bounty program
+
 ---
 
-**Last Updated**: 2025-11-09
+**Last Updated**: 2025-11-20
 **Version**: 2.0.0-alpha
+**Audit Status**: Scheduled for Q1 2025

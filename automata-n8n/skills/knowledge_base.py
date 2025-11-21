@@ -10,15 +10,16 @@ Version: 1.0.0
 
 import json
 import os
-from typing import Dict, List, Optional
-from dataclasses import dataclass, asdict
-from datetime import datetime
 from collections import defaultdict
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
 
 
 @dataclass
 class WorkflowPattern:
     """Represents a learned workflow pattern from the community"""
+
     pattern_id: str
     name: str
     description: str
@@ -42,6 +43,7 @@ class WorkflowPattern:
 @dataclass
 class ErrorPattern:
     """Represents a common error and its solution"""
+
     error_id: str
     error_type: str
     error_message: str
@@ -60,6 +62,7 @@ class ErrorPattern:
 @dataclass
 class NodeInsight:
     """Insights about a specific n8n node"""
+
     node_type: str
     common_use_cases: List[str]
     common_parameters: Dict
@@ -82,24 +85,24 @@ class KnowledgeBase:
     def __init__(self, base_dir: str = None):
         """Initialize knowledge base"""
         if base_dir is None:
-            base_dir = os.path.join(os.path.dirname(__file__), '..', 'knowledge_base')
+            base_dir = os.path.join(os.path.dirname(__file__), "..", "knowledge_base")
 
         self.base_dir = base_dir
-        self.patterns_file = os.path.join(base_dir, 'workflow_patterns.json')
-        self.errors_file = os.path.join(base_dir, 'error_patterns.json')
-        self.nodes_file = os.path.join(base_dir, 'node_insights.json')
-        self.meta_file = os.path.join(base_dir, 'metadata.json')
+        self.patterns_file = os.path.join(base_dir, "workflow_patterns.json")
+        self.errors_file = os.path.join(base_dir, "error_patterns.json")
+        self.nodes_file = os.path.join(base_dir, "node_insights.json")
+        self.meta_file = os.path.join(base_dir, "metadata.json")
 
         # In-memory storage
         self.workflow_patterns: Dict[str, WorkflowPattern] = {}
         self.error_patterns: Dict[str, ErrorPattern] = {}
         self.node_insights: Dict[str, NodeInsight] = {}
         self.metadata = {
-            'created_at': datetime.utcnow().isoformat(),
-            'last_updated': datetime.utcnow().isoformat(),
-            'total_patterns': 0,
-            'total_errors': 0,
-            'sources': defaultdict(int)
+            "created_at": datetime.utcnow().isoformat(),
+            "last_updated": datetime.utcnow().isoformat(),
+            "total_patterns": 0,
+            "total_errors": 0,
+            "sources": defaultdict(int),
         }
 
         # Create directory and load existing data
@@ -109,16 +112,16 @@ class KnowledgeBase:
     def add_workflow_pattern(self, pattern: WorkflowPattern) -> None:
         """Add a new workflow pattern to the knowledge base"""
         self.workflow_patterns[pattern.pattern_id] = pattern
-        self.metadata['total_patterns'] = len(self.workflow_patterns)
-        self.metadata['sources'][pattern.source] += 1
-        self.metadata['last_updated'] = datetime.utcnow().isoformat()
+        self.metadata["total_patterns"] = len(self.workflow_patterns)
+        self.metadata["sources"][pattern.source] += 1
+        self.metadata["last_updated"] = datetime.utcnow().isoformat()
 
     def add_error_pattern(self, error: ErrorPattern) -> None:
         """Add a new error pattern to the knowledge base"""
         self.error_patterns[error.error_id] = error
-        self.metadata['total_errors'] = len(self.error_patterns)
-        self.metadata['sources'][error.source] += 1
-        self.metadata['last_updated'] = datetime.utcnow().isoformat()
+        self.metadata["total_errors"] = len(self.error_patterns)
+        self.metadata["sources"][error.source] += 1
+        self.metadata["last_updated"] = datetime.utcnow().isoformat()
 
     def add_node_insight(self, node_type: str, insight: NodeInsight) -> None:
         """Add or update node insights"""
@@ -131,19 +134,23 @@ class KnowledgeBase:
         else:
             self.node_insights[node_type] = insight
 
-        self.metadata['last_updated'] = datetime.utcnow().isoformat()
+        self.metadata["last_updated"] = datetime.utcnow().isoformat()
 
-    def search_patterns(self, query: str = None, source: str = None,
-                       complexity: str = None) -> List[WorkflowPattern]:
+    def search_patterns(
+        self, query: str = None, source: str = None, complexity: str = None
+    ) -> List[WorkflowPattern]:
         """Search workflow patterns by criteria"""
         results = list(self.workflow_patterns.values())
 
         if query:
             query_lower = query.lower()
-            results = [p for p in results if
-                      query_lower in p.name.lower() or
-                      query_lower in p.description.lower() or
-                      any(query_lower in uc.lower() for uc in p.use_cases)]
+            results = [
+                p
+                for p in results
+                if query_lower in p.name.lower()
+                or query_lower in p.description.lower()
+                or any(query_lower in uc.lower() for uc in p.use_cases)
+            ]
 
         if source:
             results = [p for p in results if p.source == source]
@@ -163,8 +170,7 @@ class KnowledgeBase:
 
     def get_errors_for_node(self, node_type: str) -> List[ErrorPattern]:
         """Get all known errors for a specific node type"""
-        return [e for e in self.error_patterns.values()
-                if node_type in e.nodes_affected]
+        return [e for e in self.error_patterns.values() if node_type in e.nodes_affected]
 
     def get_node_insights(self, node_type: str) -> Optional[NodeInsight]:
         """Get insights for a specific node"""
@@ -173,65 +179,59 @@ class KnowledgeBase:
     def save(self) -> None:
         """Save knowledge base to disk"""
         # Save patterns
-        with open(self.patterns_file, 'w') as f:
+        with open(self.patterns_file, "w") as f:
             patterns_dict = {k: asdict(v) for k, v in self.workflow_patterns.items()}
             json.dump(patterns_dict, f, indent=2)
 
         # Save errors
-        with open(self.errors_file, 'w') as f:
+        with open(self.errors_file, "w") as f:
             errors_dict = {k: asdict(v) for k, v in self.error_patterns.items()}
             json.dump(errors_dict, f, indent=2)
 
         # Save node insights
-        with open(self.nodes_file, 'w') as f:
+        with open(self.nodes_file, "w") as f:
             nodes_dict = {k: asdict(v) for k, v in self.node_insights.items()}
             json.dump(nodes_dict, f, indent=2)
 
         # Save metadata
-        with open(self.meta_file, 'w') as f:
+        with open(self.meta_file, "w") as f:
             json.dump(dict(self.metadata), f, indent=2)
 
     def load(self) -> None:
         """Load knowledge base from disk"""
         # Load patterns
         if os.path.exists(self.patterns_file):
-            with open(self.patterns_file, 'r') as f:
+            with open(self.patterns_file, "r") as f:
                 patterns_dict = json.load(f)
-                self.workflow_patterns = {
-                    k: WorkflowPattern(**v) for k, v in patterns_dict.items()
-                }
+                self.workflow_patterns = {k: WorkflowPattern(**v) for k, v in patterns_dict.items()}
 
         # Load errors
         if os.path.exists(self.errors_file):
-            with open(self.errors_file, 'r') as f:
+            with open(self.errors_file, "r") as f:
                 errors_dict = json.load(f)
-                self.error_patterns = {
-                    k: ErrorPattern(**v) for k, v in errors_dict.items()
-                }
+                self.error_patterns = {k: ErrorPattern(**v) for k, v in errors_dict.items()}
 
         # Load node insights
         if os.path.exists(self.nodes_file):
-            with open(self.nodes_file, 'r') as f:
+            with open(self.nodes_file, "r") as f:
                 nodes_dict = json.load(f)
-                self.node_insights = {
-                    k: NodeInsight(**v) for k, v in nodes_dict.items()
-                }
+                self.node_insights = {k: NodeInsight(**v) for k, v in nodes_dict.items()}
 
         # Load metadata
         if os.path.exists(self.meta_file):
-            with open(self.meta_file, 'r') as f:
+            with open(self.meta_file, "r") as f:
                 self.metadata = json.load(f)
 
     def get_statistics(self) -> Dict:
         """Get knowledge base statistics"""
         return {
-            'total_workflow_patterns': len(self.workflow_patterns),
-            'total_error_patterns': len(self.error_patterns),
-            'total_node_insights': len(self.node_insights),
-            'sources': dict(self.metadata['sources']),
-            'last_updated': self.metadata['last_updated'],
-            'top_nodes': self._get_most_common_nodes(5),
-            'complexity_distribution': self._get_complexity_distribution()
+            "total_workflow_patterns": len(self.workflow_patterns),
+            "total_error_patterns": len(self.error_patterns),
+            "total_node_insights": len(self.node_insights),
+            "sources": dict(self.metadata["sources"]),
+            "last_updated": self.metadata["last_updated"],
+            "top_nodes": self._get_most_common_nodes(5),
+            "complexity_distribution": self._get_complexity_distribution(),
         }
 
     def _get_most_common_nodes(self, n: int) -> List[tuple]:
@@ -288,22 +288,22 @@ class KnowledgeBase:
         lines = []
         for source, count in sorted(sources.items(), key=lambda x: x[1], reverse=True):
             lines.append(f"- **{source.capitalize()}:** {count} patterns")
-        return '\n'.join(lines) if lines else "- No sources yet"
+        return "\n".join(lines) if lines else "- No sources yet"
 
     def _format_top_nodes(self, top_nodes: List[tuple]) -> str:
         """Format top nodes for markdown"""
         lines = []
         for i, (node, count) in enumerate(top_nodes, 1):
             lines.append(f"{i}. {node}: {count} uses")
-        return '\n'.join(lines) if lines else "- No nodes yet"
+        return "\n".join(lines) if lines else "- No nodes yet"
 
     def _format_complexity(self, distribution: Dict) -> str:
         """Format complexity distribution for markdown"""
         lines = []
-        for complexity in ['low', 'medium', 'high']:
+        for complexity in ["low", "medium", "high"]:
             count = distribution.get(complexity, 0)
             lines.append(f"- **{complexity.capitalize()}:** {count}")
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _format_top_patterns(self, n: int = 5) -> str:
         """Format top patterns for markdown"""
@@ -314,7 +314,7 @@ class KnowledgeBase:
             lines.append(f"   - {pattern.description}")
             lines.append(f"   - Popularity: {pattern.popularity_score}")
             lines.append("")
-        return '\n'.join(lines) if lines else "- No patterns yet"
+        return "\n".join(lines) if lines else "- No patterns yet"
 
 
 if __name__ == "__main__":

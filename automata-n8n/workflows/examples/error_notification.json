@@ -1,0 +1,100 @@
+{
+  "id": "error-notify-001",
+  "name": "Error Notification System",
+  "description": "Catch errors and notify teams with details and retry logic",
+  "nodes": [
+    {
+      "name": "Production API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [240, 300],
+      "parameters": {
+        "url": "https://api.production.example.com/data",
+        "method": "GET",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "name": "Check for Errors",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [580, 300],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Log Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [920, 200],
+      "parameters": {
+        "operation": "insert",
+        "table": "error_logs",
+        "columnString": "endpoint, status_code, error_message, timestamp",
+        "valueString": "https://api.production.example.com/data, {{ $json.statusCode }}, {{ $json.error }}, {{ $now.toISOString() }}"
+      }
+    },
+    {
+      "name": "Retry Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 400],
+      "parameters": {
+        "functionCode": "const maxRetries = 3;\nconst retryCount = $input.all()[0].json.retryCount || 0;\n\nif (retryCount < maxRetries) {\n  return [{ json: { shouldRetry: true, retryCount: retryCount + 1 } }];\n} else {\n  return [{ json: { shouldRetry: false, retryCount: retryCount } }];\n}"
+      }
+    },
+    {
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 3,
+      "position": [1260, 400],
+      "parameters": {
+        "channel": "#critical-errors",
+        "messageType": "text",
+        "text": "=🚨 CRITICAL ERROR:\nEndpoint: https://api.production.example.com/data\nStatus: {{ $json.statusCode }}\nError: {{ $json.error }}\nRetries: {{ $json.retryCount }}/3"
+      }
+    }
+  ],
+  "connections": {
+    "Production API": {
+      "main": [[{ "node": "Check for Errors", "type": "main", "index": 0 }]]
+    },
+    "Check for Errors": {
+      "main": [[{ "node": "Retry Logic", "type": "main", "index": 0 }], []]
+    },
+    "Retry Logic": {
+      "main": [[{ "node": "Log Error", "type": "main", "index": 0 }], [{ "node": "Send Alert", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "error-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-008"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["error-handling", "notifications", "retry", "monitoring"]
+}

@@ -32,11 +32,19 @@
 
 ### Recommended Software
 
-| Software | Purpose | Install Link |
-|----------|---------|--------------|
-| **Docker** | Containerization | https://docker.com |
-| **n8n** | Workflow testing | https://n8n.io |
-| **VS Code** | Development | https://code.visualstudio.com |
+| Software | Version | Purpose | Install Link |
+|----------|---------|---------|--------------|
+| **Docker** | Latest | Containerization | https://docker.com |
+| **n8n** | **1.60.0+** (Recommended: 1.60.1) | Workflow testing | https://n8n.io |
+| **VS Code** | Latest | Development | https://code.visualstudio.com |
+
+⚠️ **Critical n8n Version Requirement:**
+- **Minimum:** n8n 1.60.0
+- **Recommended:** n8n 1.60.1
+- **Maximum Tested:** n8n 1.70.x
+- **Not Supported:** n8n < 1.60.0 (incompatible node typeVersions)
+
+Generated workflows use modern node typeVersions (e.g., HTTP Request v4.2, Webhook v2.0) that require n8n 1.60.0 or later. See `docs/n8n_compatibility_matrix.md` for complete version compatibility information.
 
 ### System Requirements
 
@@ -342,8 +350,8 @@ All required APIs offer free tiers sufficient for development and light producti
 **Purpose:** Test generated workflows in real n8n instance
 
 **Free Options:**
-- Self-hosted (free, unlimited)
-- n8n Cloud free tier (20 workflows)
+- Self-hosted (free, unlimited executions)
+- n8n Cloud (execution-based pricing, see below)
 
 **Setup:**
 
@@ -375,7 +383,26 @@ N8N_API_URL=http://localhost:5678/api/v1  # or cloud URL
 N8N_API_KEY=your_api_key_here
 ```
 
-**Cost:** FREE (self-hosted) or $20/month (cloud)
+**Cost (2025 Pricing):**
+- **Self-hosted:** FREE (unlimited workflows & executions)
+- **n8n Cloud:** Execution-based pricing (see details below)
+
+#### n8n Cloud Pricing Tiers (2025)
+
+**Note:** n8n now charges based on **workflow executions**, not workflow count. One execution = one complete workflow run, regardless of complexity or number of nodes.
+
+| Plan | Monthly Cost | Executions Included | Key Features |
+|------|--------------|---------------------|--------------|
+| **Starter** | $20/month | 2,500 executions | Basic support, 5 concurrent executions, 320MiB RAM |
+| **Pro** | $50/month | 10,000 executions | Priority support, environment variables, webhook auth |
+| **Business** | Custom | 300,000+ executions | Advanced features, overage: 4,000 EUR per 300K executions |
+| **Enterprise** | Custom | Custom limits | Dedicated support, SSO, SLA, custom infrastructure |
+
+**Important Notes:**
+- Unlimited workflows and users across all plans (no workflow count limits)
+- If you exceed your execution quota, workflows continue running but overage charges apply
+- Free trial available for testing (limited executions)
+- For current pricing, always check: https://n8n.io/pricing
 
 ---
 
@@ -387,10 +414,12 @@ N8N_API_KEY=your_api_key_here
 | YouTube | 10K quota/day | Pay as you go | Development & Production |
 | Twitter | 500K tweets/month | $100/month | Development only |
 | GitHub | 5K req/hour | N/A | Development & Production |
-| n8n | Unlimited (self-hosted) | $20/month (cloud) | Testing |
+| n8n (self-hosted) | Unlimited | N/A | Development & Production |
+| n8n (cloud) | Trial available | $20-$50+/month (execution-based) | Production (managed) |
 
-**Total Cost for Development:** $0 (all free tiers)
-**Total Cost for Production:** $0-$120/month (depending on features)
+**Total Cost for Development (Self-Hosted n8n):** $0 (all free tiers)
+**Total Cost for Development (n8n Cloud):** $20+/month (depending on execution volume)
+**Total Cost for Production:** $0-$170/month (depending on features & n8n hosting choice)
 
 ---
 

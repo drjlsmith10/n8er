@@ -9,14 +9,16 @@ Version: 2.0.0
 """
 
 import re
-from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
 from skills.knowledge_base import KnowledgeBase, WorkflowPattern
 
 
 @dataclass
 class ParsedIntent:
     """Represents the parsed user intent"""
+
     trigger_type: str  # webhook, scheduled, manual, email, etc.
     actions: List[str]  # List of actions to perform
     data_flow: str  # simple, transform, aggregate, branch
@@ -50,7 +52,7 @@ class NLPromptParser:
             "email": ["when email", "email arrives", "new email", "email received"],
             "rss": ["rss", "feed", "blog posts", "news"],
             "database": ["database change", "new row", "database trigger"],
-            "file": ["file upload", "new file", "file arrives"]
+            "file": ["file upload", "new file", "file arrives"],
         }
 
         # Action keywords
@@ -62,7 +64,7 @@ class NLPromptParser:
             "transform": ["transform", "convert", "parse", "extract", "map"],
             "filter": ["filter", "only if", "when", "if condition"],
             "aggregate": ["combine", "merge", "aggregate", "join"],
-            "wait": ["wait", "delay", "pause", "schedule for later"]
+            "wait": ["wait", "delay", "pause", "schedule for later"],
         }
 
         # Data flow patterns
@@ -71,7 +73,7 @@ class NLPromptParser:
             "transform": ["transform", "etl", "process", "convert"],
             "branch": ["if", "conditional", "branch", "based on"],
             "loop": ["for each", "loop", "iterate", "repeat"],
-            "aggregate": ["combine", "merge", "multiple", "parallel"]
+            "aggregate": ["combine", "merge", "multiple", "parallel"],
         }
 
     def parse(self, prompt: str) -> ParsedIntent:
@@ -102,9 +104,7 @@ class NLPromptParser:
         matched_patterns = self._match_patterns(prompt_lower, trigger, actions)
 
         # Suggest template
-        template, confidence = self._suggest_template(
-            trigger, actions, flow, matched_patterns
-        )
+        template, confidence = self._suggest_template(trigger, actions, flow, matched_patterns)
 
         return ParsedIntent(
             trigger_type=trigger,
@@ -113,7 +113,7 @@ class NLPromptParser:
             error_handling=error_handling,
             suggested_template=template,
             confidence=confidence,
-            matched_patterns=matched_patterns
+            matched_patterns=matched_patterns,
         )
 
     def _identify_trigger(self, prompt: str) -> str:
@@ -156,16 +156,19 @@ class NLPromptParser:
     def _needs_error_handling(self, prompt: str) -> bool:
         """Check if error handling is required"""
         error_keywords = [
-            "error", "fail", "retry", "fallback", "handle errors",
-            "if fails", "on error", "catch"
+            "error",
+            "fail",
+            "retry",
+            "fallback",
+            "handle errors",
+            "if fails",
+            "on error",
+            "catch",
         ]
         return any(keyword in prompt for keyword in error_keywords)
 
     def _match_patterns(
-        self,
-        prompt: str,
-        trigger: str,
-        actions: List[str]
+        self, prompt: str, trigger: str, actions: List[str]
     ) -> List[WorkflowPattern]:
         """Find matching patterns from knowledge base"""
         # Search knowledge base for relevant patterns
@@ -198,11 +201,7 @@ class NLPromptParser:
         return [p[0] for p in scored_patterns[:3]]
 
     def _suggest_template(
-        self,
-        trigger: str,
-        actions: List[str],
-        flow: str,
-        matched_patterns: List[WorkflowPattern]
+        self, trigger: str, actions: List[str], flow: str, matched_patterns: List[WorkflowPattern]
     ) -> Tuple[str, float]:
         """
         Suggest best template based on intent.
@@ -263,33 +262,33 @@ class NLPromptParser:
         params = {}
 
         # Extract URLs
-        url_pattern = r'https?://[^\s]+'
+        url_pattern = r"https?://[^\s]+"
         urls = re.findall(url_pattern, prompt)
         if urls:
-            params['urls'] = urls
+            params["urls"] = urls
 
         # Extract emails
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
         emails = re.findall(email_pattern, prompt)
         if emails:
-            params['emails'] = emails
+            params["emails"] = emails
 
         # Extract Slack channels
-        channel_pattern = r'#[\w-]+'
+        channel_pattern = r"#[\w-]+"
         channels = re.findall(channel_pattern, prompt)
         if channels:
-            params['slack_channels'] = channels
+            params["slack_channels"] = channels
 
         # Extract time intervals
         time_patterns = {
-            "hourly": r'\bevery hour\b|\bhourly\b',
-            "daily": r'\bevery day\b|\bdaily\b',
-            "weekly": r'\bevery week\b|\bweekly\b',
+            "hourly": r"\bevery hour\b|\bhourly\b",
+            "daily": r"\bevery day\b|\bdaily\b",
+            "weekly": r"\bevery week\b|\bweekly\b",
         }
 
         for interval, pattern in time_patterns.items():
             if re.search(pattern, prompt.lower()):
-                params['schedule'] = interval
+                params["schedule"] = interval
 
         return params
 
@@ -304,27 +303,17 @@ class NLPromptParser:
 
         spec = {
             "name": self._generate_name(prompt),
-            "trigger": {
-                "type": intent.trigger_type,
-                "parameters": {}
-            },
-            "actions": [
-                {"type": action, "parameters": {}}
-                for action in intent.actions
-            ],
+            "trigger": {"type": intent.trigger_type, "parameters": {}},
+            "actions": [{"type": action, "parameters": {}} for action in intent.actions],
             "flow_pattern": intent.data_flow,
             "error_handling": intent.error_handling,
             "suggested_template": intent.suggested_template,
             "confidence": intent.confidence,
             "extracted_params": params,
             "matched_patterns": [
-                {
-                    "name": p.name,
-                    "description": p.description,
-                    "popularity": p.popularity_score
-                }
+                {"name": p.name, "description": p.description, "popularity": p.popularity_score}
                 for p in (intent.matched_patterns or [])
-            ]
+            ],
         }
 
         return spec
@@ -366,7 +355,7 @@ if __name__ == "__main__":
         "Every hour, fetch data from API and sync to database with retry logic",
         "Monitor RSS feed and post new items to Twitter and LinkedIn",
         "When new lead added to Google Sheets, send welcome email and schedule follow-up",
-        "Call three different APIs, merge the results, and transform the data"
+        "Call three different APIs, merge the results, and transform the data",
     ]
 
     parser = NLPromptParser()
@@ -379,5 +368,5 @@ if __name__ == "__main__":
         print(f"   ├─ Actions: {', '.join([a['type'] for a in spec['actions']])}")
         print(f"   ├─ Flow: {spec['flow_pattern']}")
         print(f"   ├─ Template: {spec['suggested_template']} ({spec['confidence']:.0%})")
-        if spec['matched_patterns']:
+        if spec["matched_patterns"]:
             print(f"   └─ Matched: {spec['matched_patterns'][0]['name']}")

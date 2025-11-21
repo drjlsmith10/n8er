@@ -11,12 +11,13 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, List
-from agents import BaseAgent, AgentTask, AgentResult
 import os
 import sys
+from typing import Dict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from agents import AgentResult, AgentTask, BaseAgent
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TesterAgent(BaseAgent):
@@ -61,8 +62,8 @@ class TesterAgent(BaseAgent):
                 metrics={
                     "tests_run": result.get("total_tests", 0),
                     "passed": result.get("passed", 0),
-                    "failed": result.get("failed", 0)
-                }
+                    "failed": result.get("failed", 0),
+                },
             )
 
         except Exception as e:
@@ -74,7 +75,7 @@ class TesterAgent(BaseAgent):
                 output=None,
                 reasoning=f"Testing error: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _run_tests(self, params: Dict) -> Dict:
@@ -93,7 +94,7 @@ class TesterAgent(BaseAgent):
             {"name": "test_workflow_generation", "status": "passed"},
             {"name": "test_node_parsing", "status": "passed"},
             {"name": "test_connection_builder", "status": "passed"},
-            {"name": "test_template_library", "status": "passed"}
+            {"name": "test_template_library", "status": "passed"},
         ]
 
         passed = sum(1 for t in tests if t["status"] == "passed")
@@ -106,7 +107,7 @@ class TesterAgent(BaseAgent):
             "failed": failed,
             "all_passed": failed == 0,
             "tests": tests,
-            "summary": f"{passed}/{len(tests)} tests passed"
+            "summary": f"{passed}/{len(tests)} tests passed",
         }
 
     def _simulate_workflow(self, params: Dict) -> Dict:
@@ -139,7 +140,7 @@ class TesterAgent(BaseAgent):
                 "passed": 0,
                 "failed": 1,
                 "summary": "No trigger node found",
-                "execution_log": []
+                "execution_log": [],
             }
 
         execution_log.append(f"START: {trigger}")
@@ -177,7 +178,7 @@ class TesterAgent(BaseAgent):
             "failed": 0 if success else 1,
             "summary": f"Simulation {'succeeded' if success else 'failed'}",
             "execution_log": execution_log,
-            "nodes_executed": len(visited)
+            "nodes_executed": len(visited),
         }
 
     def _coverage_report(self, params: Dict) -> Dict:
@@ -196,7 +197,7 @@ class TesterAgent(BaseAgent):
             "agents/researcher.py": 75,
             "agents/engineer.py": 80,
             "agents/validator.py": 95,
-            "agents/tester.py": 85
+            "agents/tester.py": 85,
         }
 
         total_coverage = sum(coverage.values()) / len(coverage)
@@ -208,18 +209,14 @@ class TesterAgent(BaseAgent):
             "failed": 0,
             "summary": f"Overall coverage: {total_coverage:.1f}%",
             "file_coverage": coverage,
-            "average_coverage": round(total_coverage, 1)
+            "average_coverage": round(total_coverage, 1),
         }
 
 
 if __name__ == "__main__":
     agent = TesterAgent()
 
-    task = AgentTask(
-        task_id="test_001",
-        task_type="run_tests",
-        parameters={"suite": "all"}
-    )
+    task = AgentTask(task_id="test_001", task_type="run_tests", parameters={"suite": "all"})
 
     result = agent.execute(task)
     print(f"Test Result: {result.success}")

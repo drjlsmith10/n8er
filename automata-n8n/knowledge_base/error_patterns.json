@@ -31,7 +31,7 @@
     "error_type": "Rate limiting",
     "error_message": "429 Too Many Requests",
     "context": "Making rapid API calls in loop",
-    "solution": "Add Wait node between iterations. Use rate limiter pattern with counter and delay.",
+    "solution": "Add Wait node between iterations. Use rate limiter pattern with counter and delay. Consider implementing exponential backoff.",
     "source": "reddit",
     "source_url": "https://reddit.com/r/n8n/comments/error3",
     "nodes_affected": [
@@ -44,12 +44,247 @@
     "error_type": "Credentials not found",
     "error_message": "Could not find credentials",
     "context": "Workflow imported from another instance",
-    "solution": "Re-create credentials in new instance. Cannot export actual credentials for security.",
+    "solution": "Re-create credentials in new instance. Cannot export actual credentials for security. Use credential templates and document required credentials.",
     "source": "reddit",
     "source_url": "https://reddit.com/r/n8n/comments/error4",
     "nodes_affected": [
       "*"
     ],
     "discovered_date": "2025-11-08T02:58:06.705021"
+  },
+  "db_connection_failed": {
+    "error_id": "db_connection_failed",
+    "error_type": "Database connection failure",
+    "error_message": "Connection refused / ECONNREFUSED",
+    "context": "Unable to connect to database server",
+    "solution": "Verify database host, port, and credentials. Check firewall rules. Ensure database is running. Add connection timeout and retry logic with exponential backoff.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.postgres",
+      "n8n-nodes-base.mysql",
+      "n8n-nodes-base.mongodb"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "db_query_timeout": {
+    "error_id": "db_query_timeout",
+    "error_type": "Database query timeout",
+    "error_message": "Query execution timeout exceeded",
+    "context": "Long-running database query",
+    "solution": "Optimize query with proper indexes. Increase timeout settings. Consider paginating results. Use background processing for large queries.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.postgres",
+      "n8n-nodes-base.mysql",
+      "n8n-nodes-base.mongodb"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "authentication_failed": {
+    "error_id": "authentication_failed",
+    "error_type": "Authentication error",
+    "error_message": "401 Unauthorized / 403 Forbidden",
+    "context": "API or service authentication failure",
+    "solution": "Verify credentials are correct and not expired. Check API key permissions. Refresh OAuth tokens if needed. Implement token refresh logic for OAuth2.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "*"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "api_timeout": {
+    "error_id": "api_timeout",
+    "error_message": "ETIMEDOUT / Request timeout",
+    "context": "HTTP request exceeds timeout limit",
+    "solution": "Increase timeout value. Implement retry logic with exponential backoff. Check external service status. Add circuit breaker pattern for failing services.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "network_error": {
+    "error_id": "network_error",
+    "error_type": "Network connectivity error",
+    "error_message": "ENOTFOUND / DNS resolution failed",
+    "context": "Unable to resolve hostname or reach network endpoint",
+    "solution": "Verify URL is correct. Check DNS settings and network connectivity. Add retry logic with increasing delays. Implement health check before making requests.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "*"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "json_parse_error": {
+    "error_id": "json_parse_error",
+    "error_type": "Data transformation error",
+    "error_message": "Unexpected token / Invalid JSON",
+    "context": "Failed to parse JSON response or data",
+    "solution": "Validate JSON structure before parsing. Add try-catch in Function nodes. Check API response format. Use Set node with explicit type conversion.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.httpRequest"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "data_validation_failed": {
+    "error_id": "data_validation_failed",
+    "error_type": "Data validation error",
+    "error_message": "Required field missing / Invalid data format",
+    "context": "Input data does not meet expected schema",
+    "solution": "Add validation node before processing. Use IF node to check for required fields. Provide default values for optional fields. Log validation errors for debugging.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.set"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "service_unavailable": {
+    "error_id": "service_unavailable",
+    "error_type": "External service outage",
+    "error_message": "503 Service Unavailable / 502 Bad Gateway",
+    "context": "External service is down or experiencing issues",
+    "solution": "Implement circuit breaker pattern. Add exponential backoff retry logic. Send alerts for prolonged outages. Use fallback services if available.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "*"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "quota_exceeded": {
+    "error_id": "quota_exceeded",
+    "error_type": "API quota/limit exceeded",
+    "error_message": "429 Too Many Requests / Quota exceeded",
+    "context": "API rate limit or quota reached",
+    "solution": "Implement rate limiting with Wait nodes. Track API usage in workflow static data. Use queue-based processing. Check rate limit headers and implement adaptive delays.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "*"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "circuit_breaker_pattern": {
+    "error_id": "circuit_breaker_pattern",
+    "error_type": "Circuit breaker pattern",
+    "error_message": "Service repeatedly failing, circuit opened",
+    "context": "Prevent cascading failures when external service is down",
+    "solution": "Track failure count in workflow static data. After N consecutive failures, 'open circuit' and stop trying for X minutes. Periodically test if service recovered.",
+    "source": "best_practices",
+    "source_url": "https://n8n.io/docs/best-practices",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "n8n-nodes-base.function"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "exponential_backoff_pattern": {
+    "error_id": "exponential_backoff_pattern",
+    "error_type": "Exponential backoff pattern",
+    "error_message": "Implementing retry with increasing delays",
+    "context": "Retry failed operations with exponentially increasing wait times",
+    "solution": "Use Function node to calculate delay: Math.pow(2, retryCount) * 1000ms. Store retry count in node context. Cap maximum delay at reasonable value (e.g., 5 minutes).",
+    "source": "best_practices",
+    "source_url": "https://n8n.io/docs/best-practices",
+    "nodes_affected": [
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.wait"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "dead_letter_queue_pattern": {
+    "error_id": "dead_letter_queue_pattern",
+    "error_type": "Dead letter queue pattern",
+    "error_message": "Handling permanently failed items",
+    "context": "Some items fail processing even after retries",
+    "solution": "After max retries exhausted, send failed items to separate 'dead letter' workflow or database for manual review. Include error details and original data.",
+    "source": "best_practices",
+    "source_url": "https://n8n.io/docs/best-practices",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest",
+      "n8n-nodes-base.postgres"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "batch_processing_error": {
+    "error_id": "batch_processing_error",
+    "error_type": "Batch processing failure",
+    "error_message": "Error processing batch of items",
+    "context": "One item in batch causes entire batch to fail",
+    "solution": "Use SplitInBatches with continueOnFail: true. Process items individually with error handling per item. Log failed items separately for retry.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.splitInBatches"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "ssl_certificate_error": {
+    "error_id": "ssl_certificate_error",
+    "error_type": "SSL/TLS certificate error",
+    "error_message": "CERT_HAS_EXPIRED / Self-signed certificate",
+    "context": "SSL certificate validation failure",
+    "solution": "For production: Fix certificate issue at source. For development: Can disable SSL verification in HTTP Request node options (not recommended for production).",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.httpRequest"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "file_not_found_error": {
+    "error_id": "file_not_found_error",
+    "error_type": "File not found error",
+    "error_message": "ENOENT / File does not exist",
+    "context": "Attempting to read or process non-existent file",
+    "solution": "Add file existence check before processing. Use IF node to validate file paths. Implement fallback for missing files. Add proper error notifications.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.readBinaryFiles",
+      "n8n-nodes-base.writeBinaryFile"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "workflow_execution_timeout": {
+    "error_id": "workflow_execution_timeout",
+    "error_type": "Workflow execution timeout",
+    "error_message": "Execution timeout exceeded",
+    "context": "Workflow takes longer than maximum execution time",
+    "solution": "Optimize workflow logic. Split into multiple smaller workflows. Use Queue node for long-running tasks. Increase timeout in workflow settings if necessary.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "*"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
+  },
+  "null_pointer_error": {
+    "error_id": "null_pointer_error",
+    "error_type": "Null/undefined data error",
+    "error_message": "Cannot read property of null/undefined",
+    "context": "Accessing property on null or undefined data",
+    "solution": "Use optional chaining in expressions: {{ $json?.field?.nested }}. Add null checks in Function nodes. Provide default values with: {{ $json.field ?? 'default' }}.",
+    "source": "community_patterns",
+    "source_url": "https://n8n.io/docs/error-handling",
+    "nodes_affected": [
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.set"
+    ],
+    "discovered_date": "2025-11-20T00:00:00.000000"
   }
 }

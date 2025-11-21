@@ -1,0 +1,52 @@
+[flake8]
+# Line length (compatible with Black)
+max-line-length = 100
+
+# Exclude directories
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .venv,
+    venv,
+    dist,
+    build,
+    .eggs,
+    *.egg-info
+
+# Error codes to ignore
+# E203: whitespace before ':'
+# E501: line too long (handled by line-length, but we ignore in tests)
+# W503: line break before binary operator
+# W504: line break after binary operator
+extend-ignore = E203,W503,W504
+
+# Maximum complexity
+max-complexity = 15
+
+# Per-file ignores
+# F401: imported but unused (acceptable in __init__.py for API exposure)
+# E402: module level import not at top (necessary for path setup)
+# E501: line too long (acceptable in docstrings and tests)
+# F811: redefined while unused (acceptable in tests)
+# E712: comparison to True/False (will be fixed manually)
+per-file-ignores =
+    __init__.py:F401
+    setup.py:F401
+    scripts/run_web_research.py:E402,E501
+    tests/*:F401,F811,F841,E402,E501,E712
+    agents/web_researcher.py:E501
+    agents/documenter.py:E501
+    agents/validator.py:E501
+    config.py:E501
+    skills/enhanced_templates.py:E501
+    skills/generate_workflow_json.py:E501
+    skills/credential_manager.py:E501
+    skills/n8n_api_client.py:E501
+    skills/workflow_versioning.py:E501
+    skills/n8n_node_versions.py:E501,C901,E402
+    skills/parse_n8n_schema.py:F402,F841
+
+# Docstring conventions
+# Note: Can be changed to 'google' or 'numpy' if pydocstyle is installed
+docstring-convention = google

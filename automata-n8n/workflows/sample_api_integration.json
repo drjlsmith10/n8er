@@ -4,7 +4,7 @@
     {
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
+      "typeVersion": 1.2,
       "position": [
         240,
         300
@@ -22,7 +22,7 @@
     {
       "name": "Fetch API Data",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
+      "typeVersion": 4.2,
       "position": [
         580,
         300
@@ -38,7 +38,7 @@
     {
       "name": "Check Response",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         920,
         300
@@ -60,7 +60,7 @@
     {
       "name": "Process Success",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
+      "typeVersion": 3.3,
       "position": [
         1260,
         200
@@ -84,7 +84,7 @@
     {
       "name": "Send Alert",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
+      "typeVersion": 4.2,
       "position": [
         1260,
         400

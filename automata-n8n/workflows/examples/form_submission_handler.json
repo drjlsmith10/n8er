@@ -1,0 +1,106 @@
+{
+  "id": "form-handler-001",
+  "name": "Form Submission Handler",
+  "description": "Handle form submissions with validation, storage, and notifications",
+  "nodes": [
+    {
+      "name": "Form Webhook",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "formTitle": "Contact Us",
+        "formDescription": "Send us your feedback",
+        "formFields": [
+          {
+            "fieldLabel": "Name",
+            "fieldType": "text",
+            "fieldRequired": true
+          },
+          {
+            "fieldLabel": "Email",
+            "fieldType": "email",
+            "fieldRequired": true
+          },
+          {
+            "fieldLabel": "Message",
+            "fieldType": "textarea",
+            "fieldRequired": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [580, 300],
+      "parameters": {
+        "functionCode": "const { name, email, message } = $input.all()[0].json;\nconst errors = [];\n\nif (!name || name.trim().length < 2) errors.push('Name must be at least 2 characters');\nif (!email || !email.includes('@')) errors.push('Valid email required');\nif (!message || message.trim().length < 10) errors.push('Message must be at least 10 characters');\n\nreturn [{ json: { valid: errors.length === 0, errors, data: { name, email, message } } }];"
+      }
+    },
+    {
+      "name": "Store Submission",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "parameters": {
+        "operation": "insert",
+        "table": "form_submissions",
+        "columnString": "name, email, message, submitted_at",
+        "valueString": "={{ $json.data.name }}, {{ $json.data.email }}, {{ $json.data.message }}, {{ $now.toISOString() }}"
+      }
+    },
+    {
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1260, 300],
+      "parameters": {
+        "fromEmail": "forms@company.com",
+        "toEmail": "={{ $json.data.email }}",
+        "subject": "We received your message",
+        "message": "=Hi {{ $json.data.name }},\n\nThank you for contacting us. We've received your message and will get back to you within 24 hours.\n\nBest regards,\nThe Team"
+      }
+    },
+    {
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 3,
+      "position": [1260, 450],
+      "parameters": {
+        "channel": "#form-submissions",
+        "messageType": "text",
+        "text": "=📝 New Form Submission\nName: {{ $json.data.name }}\nEmail: {{ $json.data.email }}\nMessage: {{ $json.data.message }}"
+      }
+    }
+  ],
+  "connections": {
+    "Form Webhook": {
+      "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]]
+    },
+    "Validate Input": {
+      "main": [[{ "node": "Store Submission", "type": "main", "index": 0 }]]
+    },
+    "Store Submission": {
+      "main": [[{ "node": "Send Confirmation", "type": "main", "index": 0 }, { "node": "Notify Admin", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "form-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-010"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["forms", "validation", "database", "notifications"]
+}

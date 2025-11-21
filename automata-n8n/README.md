@@ -70,7 +70,7 @@ The orchestration layer that:
 - ✅ Parse n8n workflow schemas with circular dependency detection
 - ✅ Generate workflow JSON with auto-positioning
 - ✅ Validate node structure and dependencies
-- ✅ Automated testing framework (45 tests, 100% pass rate)
+- ✅ Automated testing framework (51 tests, 100% pass rate)
 - ✅ Multi-agent coordination framework (7 specialized agents)
 
 ### New in Cycle-02
@@ -90,6 +90,15 @@ The orchestration layer that:
 ---
 
 ## Quick Start
+
+### Requirements
+
+- **Python:** 3.11.9 or higher (tested on 3.11.9, compatible with 3.9-3.12)
+- **Docker:** Optional for containerized deployment
+- **n8n:** v1.60.0+ **REQUIRED** (Recommended: v1.60.1)
+  - ⚠️ **Critical:** Generated workflows use modern node typeVersions optimized for n8n 1.60.0+
+  - See `docs/n8n_compatibility_matrix.md` for detailed version requirements
+  - Older versions (< 1.60.0) may have incompatible node typeVersions
 
 ### Installation
 
@@ -127,8 +136,10 @@ python skills/generate_workflow_json.py --prompt "Send email when webhook receiv
 
 ```bash
 pytest tests/
-# or
-npm test
+# Run with verbose output
+pytest tests/ -v
+# Run specific test file
+pytest tests/test_workflow_generation.py
 ```
 
 ---
@@ -184,7 +195,7 @@ We welcome contributions from the community! Project Automata thrives on collabo
 
 The system self-improves through meta-evaluation cycles documented in `docs/changelog.md` and `docs/eval_report.md`. Every contribution goes through:
 
-1. Automated testing (45+ tests)
+1. Automated testing (51+ tests)
 2. Code quality checks (Black, Flake8, mypy)
 3. Security scanning
 4. Community review
@@ -217,4 +228,4 @@ MIT License - See LICENSE file for details
 ## Contact
 
 Project maintained by Automata-Prime
-Documentation auto-generated on: 2025-11-08
+Documentation auto-generated on: 2025-11-20

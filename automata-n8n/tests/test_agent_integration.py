@@ -7,20 +7,21 @@ Author: Project Automata - Tester Agent
 Version: 1.0.0
 """
 
-import pytest
-import sys
 import os
+import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import pytest
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
-    from agents import BaseAgent, AgentTask, AgentResult
-    from agents.researcher import ResearcherAgent
-    from agents.engineer import EngineerAgent
-    from agents.validator import ValidatorAgent
-    from agents.tester import TesterAgent
+    from agents import AgentResult, AgentTask, BaseAgent
     from agents.documenter import DocumenterAgent
+    from agents.engineer import EngineerAgent
     from agents.project_manager import ProjectManagerAgent
+    from agents.researcher import ResearcherAgent
+    from agents.tester import TesterAgent
+    from agents.validator import ValidatorAgent
 except ImportError:
     pytest.skip("Agent modules not available", allow_module_level=True)
 
@@ -60,11 +61,7 @@ class TestResearcherAgent:
     def test_researcher_find_patterns(self):
         """Test pattern finding task"""
         agent = ResearcherAgent()
-        task = AgentTask(
-            task_id="research_001",
-            task_type="find_patterns",
-            parameters={}
-        )
+        task = AgentTask(task_id="research_001", task_type="find_patterns", parameters={})
 
         result = agent.execute(task)
         assert result.success == True
@@ -74,11 +71,7 @@ class TestResearcherAgent:
     def test_researcher_mine_docs(self):
         """Test documentation mining"""
         agent = ResearcherAgent()
-        task = AgentTask(
-            task_id="research_002",
-            task_type="mine_docs",
-            parameters={}
-        )
+        task = AgentTask(task_id="research_002", task_type="mine_docs", parameters={})
 
         result = agent.execute(task)
         assert result.success == True
@@ -90,7 +83,7 @@ class TestResearcherAgent:
         task = AgentTask(
             task_id="research_003",
             task_type="summarize_node",
-            parameters={"node_type": "n8n-nodes-base.webhook"}
+            parameters={"node_type": "n8n-nodes-base.webhook"},
         )
 
         result = agent.execute(task)
@@ -113,7 +106,7 @@ class TestEngineerAgent:
         task = AgentTask(
             task_id="eng_001",
             task_type="build_module",
-            parameters={"name": "test_module", "type": "skill"}
+            parameters={"name": "test_module", "type": "skill"},
         )
 
         result = agent.execute(task)
@@ -126,7 +119,7 @@ class TestEngineerAgent:
         task = AgentTask(
             task_id="eng_002",
             task_type="review",
-            parameters={"code": 'def test():\n    """docstring"""\n    pass'}
+            parameters={"code": 'def test():\n    """docstring"""\n    pass'},
         )
 
         result = agent.execute(task)
@@ -154,16 +147,16 @@ class TestValidatorAgent:
                     "type": "n8n-nodes-base.manualTrigger",
                     "typeVersion": 1,
                     "position": [240, 300],
-                    "parameters": {}
+                    "parameters": {},
                 }
             ],
-            "connections": {}
+            "connections": {},
         }
 
         task = AgentTask(
             task_id="val_001",
             task_type="validate_workflow",
-            parameters={"workflow": valid_workflow}
+            parameters={"workflow": valid_workflow},
         )
 
         result = agent.execute(task)
@@ -182,7 +175,7 @@ class TestValidatorAgent:
         task = AgentTask(
             task_id="val_002",
             task_type="validate_workflow",
-            parameters={"workflow": invalid_workflow}
+            parameters={"workflow": invalid_workflow},
         )
 
         result = agent.execute(task)
@@ -201,11 +194,7 @@ class TestTesterAgent:
     def test_run_tests(self):
         """Test running test suite"""
         agent = TesterAgent()
-        task = AgentTask(
-            task_id="test_001",
-            task_type="run_tests",
-            parameters={"suite": "all"}
-        )
+        task = AgentTask(task_id="test_001", task_type="run_tests", parameters={"suite": "all"})
 
         result = agent.execute(task)
         assert result.success == True
@@ -218,21 +207,13 @@ class TestTesterAgent:
         workflow = {
             "nodes": [
                 {"name": "Start", "type": "n8n-nodes-base.manualTrigger"},
-                {"name": "Action", "type": "n8n-nodes-base.noOp"}
+                {"name": "Action", "type": "n8n-nodes-base.noOp"},
             ],
-            "connections": {
-                "Start": {
-                    "main": [
-                        [{"node": "Action", "type": "main", "index": 0}]
-                    ]
-                }
-            }
+            "connections": {"Start": {"main": [[{"node": "Action", "type": "main", "index": 0}]]}},
         }
 
         task = AgentTask(
-            task_id="test_002",
-            task_type="simulate_workflow",
-            parameters={"workflow": workflow}
+            task_id="test_002", task_type="simulate_workflow", parameters={"workflow": workflow}
         )
 
         result = agent.execute(task)
@@ -252,9 +233,7 @@ class TestDocumenterAgent:
         """Test documentation generation"""
         agent = DocumenterAgent()
         task = AgentTask(
-            task_id="doc_001",
-            task_type="generate_docs",
-            parameters={"source": "test_module"}
+            task_id="doc_001", task_type="generate_docs", parameters={"source": "test_module"}
         )
 
         result = agent.execute(task)
@@ -267,13 +246,7 @@ class TestDocumenterAgent:
         task = AgentTask(
             task_id="doc_002",
             task_type="eval_report",
-            parameters={
-                "cycle": 1,
-                "metrics": {
-                    "schema_validity": 90,
-                    "test_pass_rate": 95
-                }
-            }
+            parameters={"cycle": 1, "metrics": {"schema_validity": 90, "test_pass_rate": 95}},
         )
 
         result = agent.execute(task)
@@ -292,11 +265,7 @@ class TestProjectManagerAgent:
     def test_plan_cycle(self):
         """Test cycle planning"""
         agent = ProjectManagerAgent()
-        task = AgentTask(
-            task_id="pm_001",
-            task_type="plan_cycle",
-            parameters={"cycle": 1}
-        )
+        task = AgentTask(task_id="pm_001", task_type="plan_cycle", parameters={"cycle": 1})
 
         result = agent.execute(task)
         assert result.success == True
@@ -306,11 +275,7 @@ class TestProjectManagerAgent:
     def test_track_progress(self):
         """Test progress tracking"""
         agent = ProjectManagerAgent()
-        task = AgentTask(
-            task_id="pm_002",
-            task_type="track_progress",
-            parameters={"cycle": 1}
-        )
+        task = AgentTask(task_id="pm_002", task_type="track_progress", parameters={"cycle": 1})
 
         result = agent.execute(task)
         assert result.success == True
@@ -322,7 +287,7 @@ class TestProjectManagerAgent:
         task = AgentTask(
             task_id="pm_003",
             task_type="version_bump",
-            parameters={"current": "1.0.0", "type": "minor"}
+            parameters={"current": "1.0.0", "type": "minor"},
         )
 
         result = agent.execute(task)
@@ -337,11 +302,7 @@ class TestMultiAgentCoordination:
         """Test passing work between agents"""
         # Researcher finds patterns
         researcher = ResearcherAgent()
-        research_task = AgentTask(
-            task_id="coord_001",
-            task_type="find_patterns",
-            parameters={}
-        )
+        research_task = AgentTask(task_id="coord_001", task_type="find_patterns", parameters={})
         research_result = researcher.execute(research_task)
 
         # Engineer could use those patterns to build
@@ -356,27 +317,28 @@ class TestMultiAgentCoordination:
         workflow = {
             "name": "Test",
             "nodes": [
-                {"name": "Start", "type": "n8n-nodes-base.manualTrigger",
-                 "typeVersion": 1, "position": [0, 0], "parameters": {}}
+                {
+                    "name": "Start",
+                    "type": "n8n-nodes-base.manualTrigger",
+                    "typeVersion": 1,
+                    "position": [0, 0],
+                    "parameters": {},
+                }
             ],
-            "connections": {}
+            "connections": {},
         }
 
         # Validator checks it
         validator = ValidatorAgent()
         val_task = AgentTask(
-            task_id="coord_002",
-            task_type="validate_workflow",
-            parameters={"workflow": workflow}
+            task_id="coord_002", task_type="validate_workflow", parameters={"workflow": workflow}
         )
         val_result = validator.execute(val_task)
 
         # Tester simulates it
         tester = TesterAgent()
         test_task = AgentTask(
-            task_id="coord_003",
-            task_type="simulate_workflow",
-            parameters={"workflow": workflow}
+            task_id="coord_003", task_type="simulate_workflow", parameters={"workflow": workflow}
         )
         test_result = tester.execute(test_task)
 

@@ -1,0 +1,114 @@
+{
+  "id": "approval-001",
+  "name": "Multi-Step Approval Workflow",
+  "description": "Route requests through multiple approval stages",
+  "nodes": [
+    {
+      "name": "Request Received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "approval-request",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "name": "Manager Review",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 3,
+      "position": [580, 300],
+      "parameters": {
+        "channel": "#approvals",
+        "messageType": "text",
+        "text": "=🔍 Pending Manager Approval\nRequest: {{ $json.title }}\nAmount: {{ $json.amount }}"
+      }
+    },
+    {
+      "name": "Wait for Response",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [920, 300],
+      "parameters": {
+        "waitType": "duration",
+        "duration": "24h"
+      }
+    },
+    {
+      "name": "Check Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1260, 300],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Send Approval Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1600, 200],
+      "parameters": {
+        "fromEmail": "approvals@company.com",
+        "toEmail": "={{ $json.requester_email }}",
+        "subject": "Your Request Has Been Approved",
+        "message": "Your request for {{ $json.title }} has been approved!"
+      }
+    },
+    {
+      "name": "Send Rejection Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1600, 400],
+      "parameters": {
+        "fromEmail": "approvals@company.com",
+        "toEmail": "={{ $json.requester_email }}",
+        "subject": "Your Request Has Been Rejected",
+        "message": "Your request has been rejected. Please contact management for details."
+      }
+    }
+  ],
+  "connections": {
+    "Request Received": {
+      "main": [[{ "node": "Manager Review", "type": "main", "index": 0 }]]
+    },
+    "Manager Review": {
+      "main": [[{ "node": "Wait for Response", "type": "main", "index": 0 }]]
+    },
+    "Wait for Response": {
+      "main": [[{ "node": "Check Status", "type": "main", "index": 0 }]]
+    },
+    "Check Status": {
+      "main": [[{ "node": "Send Approval Notification", "type": "main", "index": 0 }], [{ "node": "Send Rejection Notification", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "approval-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-007"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["approval", "workflow", "multi-step", "notifications"]
+}

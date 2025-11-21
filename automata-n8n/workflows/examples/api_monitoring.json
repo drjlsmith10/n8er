@@ -1,0 +1,101 @@
+{
+  "id": "api-monitor-001",
+  "name": "API Health Monitoring",
+  "description": "Monitor API endpoints and alert on failures",
+  "nodes": [
+    {
+      "name": "Monitor Interval",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "expression": "*/5 * * * *",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "name": "Check API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [580, 300],
+      "parameters": {
+        "url": "=https://api.example.com/health",
+        "method": "GET",
+        "options": {
+          "timeout": 5000
+        }
+      }
+    },
+    {
+      "name": "Evaluate Health",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Log Success",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1260, 200],
+      "parameters": {
+        "operation": "insert",
+        "table": "api_health_logs",
+        "columnString": "endpoint, status, checked_at",
+        "valueString": "https://api.example.com/health, healthy, {{ $now.toISOString() }}"
+      }
+    },
+    {
+      "name": "Alert on Failure",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 3,
+      "position": [1260, 400],
+      "parameters": {
+        "channel": "#alerts",
+        "messageType": "text",
+        "text": "⚠️ API Health Check Failed! Status: {{ $json.statusCode }}"
+      }
+    }
+  ],
+  "connections": {
+    "Monitor Interval": {
+      "main": [[{ "node": "Check API", "type": "main", "index": 0 }]]
+    },
+    "Check API": {
+      "main": [[{ "node": "Evaluate Health", "type": "main", "index": 0 }]]
+    },
+    "Evaluate Health": {
+      "main": [[{ "node": "Log Success", "type": "main", "index": 0 }], [{ "node": "Alert on Failure", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "api-monitor-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-005"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["api", "monitoring", "health-check", "alerts"]
+}

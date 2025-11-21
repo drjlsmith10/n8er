@@ -11,13 +11,14 @@ Author: Project Automata
 Version: 1.0.0
 """
 
-from typing import Dict, Any
-from agents import BaseAgent, AgentTask, AgentResult
-import sys
 import os
+import sys
+from typing import Dict
+
+from agents import AgentResult, AgentTask, BaseAgent
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class EngineerAgent(BaseAgent):
@@ -35,7 +36,7 @@ class EngineerAgent(BaseAgent):
             "Write docstrings",
             "Follow PEP8",
             "Include error handling",
-            "Add inline reasoning comments"
+            "Add inline reasoning comments",
         ]
 
     def execute(self, task: AgentTask) -> AgentResult:
@@ -68,7 +69,7 @@ class EngineerAgent(BaseAgent):
                 success=True,
                 output=result,
                 reasoning=f"Engineering task completed: {task.task_type}",
-                metrics={"quality_score": result.get("quality_score", 0)}
+                metrics={"quality_score": result.get("quality_score", 0)},
             )
 
         except Exception as e:
@@ -80,7 +81,7 @@ class EngineerAgent(BaseAgent):
                 output=None,
                 reasoning=f"Engineering failed: {str(e)}",
                 metrics={},
-                errors=[str(e)]
+                errors=[str(e)],
             )
 
     def _build_module(self, params: Dict) -> Dict:
@@ -103,9 +104,9 @@ class EngineerAgent(BaseAgent):
                 "imports": ["typing", "logging"],
                 "classes": [],
                 "functions": [],
-                "tests": True
+                "tests": True,
             },
-            "quality_score": 85
+            "quality_score": 85,
         }
 
         return module_spec
@@ -125,14 +126,10 @@ class EngineerAgent(BaseAgent):
             "Extracted common logic to shared methods",
             "Improved error handling with specific exceptions",
             "Enhanced docstrings with usage examples",
-            "Optimized loop performance"
+            "Optimized loop performance",
         ]
 
-        return {
-            "target": target,
-            "improvements": improvements,
-            "quality_score": 90
-        }
+        return {"target": target, "improvements": improvements, "quality_score": 90}
 
     def _optimize_code(self, params: Dict) -> Dict:
         """
@@ -148,14 +145,14 @@ class EngineerAgent(BaseAgent):
             "Implemented caching for repeated operations",
             "Reduced redundant computations",
             "Optimized data structures (list → set for lookups)",
-            "Added lazy loading for large resources"
+            "Added lazy loading for large resources",
         ]
 
         return {
             "target": target,
             "optimizations": optimizations,
             "performance_gain": "35%",
-            "quality_score": 88
+            "quality_score": 88,
         }
 
     def _review_code(self, params: Dict) -> Dict:
@@ -180,10 +177,7 @@ class EngineerAgent(BaseAgent):
             elif rule == "Write docstrings" and '"""' not in code:
                 passed = False
 
-            review_results.append({
-                "rule": rule,
-                "passed": passed
-            })
+            review_results.append({"rule": rule, "passed": passed})
 
             if not passed:
                 score -= 10
@@ -191,9 +185,7 @@ class EngineerAgent(BaseAgent):
         return {
             "review_results": review_results,
             "quality_score": max(score, 0),
-            "recommendations": [
-                r["rule"] for r in review_results if not r["passed"]
-            ]
+            "recommendations": [r["rule"] for r in review_results if not r["passed"]],
         }
 
 
@@ -203,7 +195,7 @@ if __name__ == "__main__":
     task = AgentTask(
         task_id="eng_001",
         task_type="build_module",
-        parameters={"name": "test_module", "type": "skill"}
+        parameters={"name": "test_module", "type": "skill"},
     )
 
     result = agent.execute(task)

@@ -1,0 +1,81 @@
+{
+  "id": "backup-001",
+  "name": "Scheduled Database Backup",
+  "description": "Regularly backup database and upload to cloud storage",
+  "nodes": [
+    {
+      "name": "Backup Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "expression": "0 2 * * *",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "name": "Export Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [580, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "COPY (SELECT * FROM public.users) TO STDOUT WITH (FORMAT csv, HEADER true);"
+      }
+    },
+    {
+      "name": "Upload to S3",
+      "type": "n8n-nodes-base.aws",
+      "typeVersion": 3,
+      "position": [920, 300],
+      "parameters": {
+        "service": "s3",
+        "operation": "putObject",
+        "bucketName": "backups-bucket",
+        "key": "=db-backup-{{ $now.toISOString() }}.csv",
+        "dataType": "fromParameter",
+        "binaryData": "binaryData"
+      }
+    },
+    {
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1260, 300],
+      "parameters": {
+        "fromEmail": "backup@automation.com",
+        "toEmail": "admin@example.com",
+        "subject": "Database Backup Completed",
+        "message": "Backup completed successfully at {{ $now.toISOString() }}"
+      }
+    }
+  ],
+  "connections": {
+    "Backup Schedule": {
+      "main": [[{ "node": "Export Database", "type": "main", "index": 0 }]]
+    },
+    "Export Database": {
+      "main": [[{ "node": "Upload to S3", "type": "main", "index": 0 }]]
+    },
+    "Upload to S3": {
+      "main": [[{ "node": "Send Confirmation", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": true,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "backup-v001",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "instance-004"
+  },
+  "pinData": {},
+  "staticData": {},
+  "createdAt": "2025-11-20T00:00:00.000Z",
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "tags": ["backup", "database", "scheduled", "cloud-storage"]
+}
