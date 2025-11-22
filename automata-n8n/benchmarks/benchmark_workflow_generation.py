@@ -22,8 +22,9 @@ except ImportError:
     print("ERROR: Could not import WorkflowBuilder")
     sys.exit(1)
 
+# Application should configure logging, not benchmark modules
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
 class WorkflowGenerationBenchmark:

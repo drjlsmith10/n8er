@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple
 
-# Configure logging for reasoning traces
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 

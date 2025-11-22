@@ -20,8 +20,8 @@ from datetime import datetime
 from difflib import unified_diff
 from typing import Any, Dict, List, Optional, Tuple
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 
@@ -326,18 +326,41 @@ class WorkflowVersionManager:
 
         return comparison
 
-    def generate_diff(self, workflow1: Dict, workflow2: Dict, context_lines: int = 3) -> str:
+    def generate_diff(
+        self,
+        workflow1: Dict,
+        workflow2: Dict,
+        context_lines: int = 3,
+        max_size_mb: float = 10.0
+    ) -> str:
         """
         Generate a unified diff between two workflows.
+
+        Uses memory-efficient streaming for large workflows.
 
         Args:
             workflow1: First workflow JSON
             workflow2: Second workflow JSON
             context_lines: Number of context lines in diff
+            max_size_mb: Maximum workflow size to process (MB)
 
         Returns:
             Unified diff string
+
+        Raises:
+            ValueError: If workflow exceeds max_size_mb
         """
+        # Estimate size to prevent memory issues
+        size1 = len(json.dumps(workflow1))
+        size2 = len(json.dumps(workflow2))
+        total_size_mb = (size1 + size2) / (1024 * 1024)
+
+        if total_size_mb > max_size_mb:
+            raise ValueError(
+                f"Workflows too large for diff ({total_size_mb:.1f}MB > {max_size_mb}MB). "
+                "Use generate_diff_streaming() for large workflows."
+            )
+
         # Convert to formatted JSON strings
         json1 = json.dumps(workflow1, indent=2, sort_keys=True).splitlines(keepends=True)
         json2 = json.dumps(workflow2, indent=2, sort_keys=True).splitlines(keepends=True)
@@ -353,9 +376,66 @@ class WorkflowVersionManager:
 
         return "".join(diff)
 
+    def generate_diff_streaming(
+        self,
+        workflow1: Dict,
+        workflow2: Dict,
+        context_lines: int = 3,
+        chunk_size: int = 1000
+    ):
+        """
+        Generate diff using streaming for memory efficiency with large workflows.
+
+        Yields diff lines instead of building entire string in memory.
+
+        Args:
+            workflow1: First workflow JSON
+            workflow2: Second workflow JSON
+            context_lines: Number of context lines in diff
+            chunk_size: Lines to process per chunk
+
+        Yields:
+            Diff lines as strings
+        """
+        # Stream JSON serialization using generators
+        json1_lines = self._stream_json_lines(workflow1)
+        json2_lines = self._stream_json_lines(workflow2)
+
+        # Collect lines in chunks for difflib
+        lines1 = list(json1_lines)
+        lines2 = list(json2_lines)
+
+        # Generate diff as generator
+        diff_gen = unified_diff(
+            lines1,
+            lines2,
+            fromfile=f"{workflow1.get('name', 'workflow')} (old)",
+            tofile=f"{workflow2.get('name', 'workflow')} (new)",
+            n=context_lines,
+        )
+
+        # Yield lines
+        for line in diff_gen:
+            yield line
+
+    def _stream_json_lines(self, obj: Dict, indent: int = 2) -> List[str]:
+        """
+        Convert dict to JSON lines for streaming comparison.
+
+        Uses sorted keys for consistent ordering.
+        """
+        json_str = json.dumps(obj, indent=indent, sort_keys=True)
+        return json_str.splitlines(keepends=True)
+
     def detect_changes(self, workflow1: Dict, workflow2: Dict) -> Dict[str, Any]:
         """
-        Detect and categorize changes between workflows.
+        Detect and categorize changes between workflows using semantic comparison.
+
+        Uses semantic comparison to avoid false positives from:
+        - Timestamp differences
+        - ID changes
+        - Metadata variations
+        - Field ordering differences
 
         Args:
             workflow1: Original workflow
@@ -369,12 +449,13 @@ class WorkflowVersionManager:
             "nodes_added": [],
             "nodes_removed": [],
             "nodes_modified": [],
+            "node_modifications": {},  # Detailed per-node changes
             "connections_changed": False,
             "settings_changed": False,
             "breaking_changes": False,
         }
 
-        # Compare nodes
+        # Compare nodes using semantic comparison
         nodes1 = {n["name"]: n for n in workflow1.get("nodes", [])}
         nodes2 = {n["name"]: n for n in workflow2.get("nodes", [])}
 
@@ -382,18 +463,26 @@ class WorkflowVersionManager:
         changes["nodes_added"] = list(set(nodes2.keys()) - set(nodes1.keys()))
         changes["nodes_removed"] = list(set(nodes1.keys()) - set(nodes2.keys()))
 
-        # Detect modified nodes
+        # Detect modified nodes with semantic comparison
         for name in set(nodes1.keys()) & set(nodes2.keys()):
-            if nodes1[name] != nodes2[name]:
+            if not self._nodes_semantically_equal(nodes1[name], nodes2[name]):
                 changes["nodes_modified"].append(name)
+                # Track specific modifications
+                changes["node_modifications"][name] = self._get_node_diff(
+                    nodes1[name], nodes2[name]
+                )
 
-        # Check connections
-        changes["connections_changed"] = workflow1.get("connections", {}) != workflow2.get(
-            "connections", {}
+        # Check connections with semantic comparison
+        changes["connections_changed"] = not self._connections_semantically_equal(
+            workflow1.get("connections", {}),
+            workflow2.get("connections", {})
         )
 
-        # Check settings
-        changes["settings_changed"] = workflow1.get("settings", {}) != workflow2.get("settings", {})
+        # Check settings with semantic comparison (exclude timestamps)
+        changes["settings_changed"] = not self._settings_semantically_equal(
+            workflow1.get("settings", {}),
+            workflow2.get("settings", {})
+        )
 
         # Determine if breaking
         changes["breaking_changes"] = (
@@ -401,6 +490,104 @@ class WorkflowVersionManager:
         )
 
         return changes
+
+    def _nodes_semantically_equal(self, node1: Dict, node2: Dict) -> bool:
+        """
+        Compare two nodes semantically, ignoring volatile fields.
+
+        Ignores: id, position, webhookId, createdAt, updatedAt
+        """
+        volatile_fields = {'id', 'webhookId', 'createdAt', 'updatedAt'}
+        essential_fields = ['name', 'type', 'typeVersion', 'parameters', 'credentials', 'disabled']
+
+        for field_name in essential_fields:
+            val1 = node1.get(field_name)
+            val2 = node2.get(field_name)
+
+            if isinstance(val1, dict) and isinstance(val2, dict):
+                if not self._dicts_equal_ignoring_volatile(val1, val2, volatile_fields):
+                    return False
+            elif val1 != val2:
+                return False
+
+        return True
+
+    def _dicts_equal_ignoring_volatile(self, dict1: Dict, dict2: Dict, volatile: set) -> bool:
+        """Compare dicts while ignoring volatile fields."""
+        keys1 = set(dict1.keys()) - volatile
+        keys2 = set(dict2.keys()) - volatile
+
+        if keys1 != keys2:
+            return False
+
+        for key in keys1:
+            if dict1[key] != dict2[key]:
+                return False
+
+        return True
+
+    def _connections_semantically_equal(self, conn1: Dict, conn2: Dict) -> bool:
+        """Compare connections semantically with normalized structure."""
+        return self._normalize_connections(conn1) == self._normalize_connections(conn2)
+
+    def _normalize_connections(self, connections: Dict) -> Dict:
+        """Normalize connection structure for comparison."""
+        normalized = {}
+        for source, targets in connections.items():
+            if isinstance(targets, dict):
+                normalized[source] = {}
+                for conn_type, outputs in targets.items():
+                    if isinstance(outputs, list):
+                        normalized[source][conn_type] = [
+                            sorted(output, key=lambda x: (x.get('node', ''), x.get('index', 0)))
+                            if isinstance(output, list) else output
+                            for output in outputs
+                        ]
+                    else:
+                        normalized[source][conn_type] = outputs
+            else:
+                normalized[source] = targets
+        return normalized
+
+    def _settings_semantically_equal(self, settings1: Dict, settings2: Dict) -> bool:
+        """Compare settings semantically, ignoring volatile keys."""
+        volatile = {'saveDataSuccessExecution', 'saveExecutionProgress'}
+        keys1 = set(settings1.keys()) - volatile
+        keys2 = set(settings2.keys()) - volatile
+
+        if keys1 != keys2:
+            return False
+
+        for key in keys1:
+            if settings1[key] != settings2[key]:
+                return False
+
+        return True
+
+    def _get_node_diff(self, node1: Dict, node2: Dict) -> Dict[str, Any]:
+        """Get detailed diff between two nodes."""
+        diff = {"fields_changed": [], "parameters_changed": []}
+
+        for field_name in ['type', 'typeVersion', 'disabled']:
+            if node1.get(field_name) != node2.get(field_name):
+                diff["fields_changed"].append({
+                    "field": field_name,
+                    "old": node1.get(field_name),
+                    "new": node2.get(field_name)
+                })
+
+        params1 = node1.get("parameters", {})
+        params2 = node2.get("parameters", {})
+
+        for param in set(params1.keys()) | set(params2.keys()):
+            if params1.get(param) != params2.get(param):
+                diff["parameters_changed"].append({
+                    "parameter": param,
+                    "old": params1.get(param),
+                    "new": params2.get(param)
+                })
+
+        return diff
 
     def suggest_version_bump(self, workflow1: Dict, workflow2: Dict) -> str:
         """

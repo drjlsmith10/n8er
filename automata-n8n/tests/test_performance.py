@@ -28,8 +28,8 @@ from skills.generate_workflow_json import TemplateLibrary, WorkflowBuilder
 from skills.nl_prompt_parser import parse_prompt
 from skills.parse_n8n_schema import parse_workflow_json
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not test modules
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 

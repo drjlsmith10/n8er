@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 
 
 @dataclass

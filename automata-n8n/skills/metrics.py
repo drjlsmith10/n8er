@@ -25,8 +25,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-# Configure logging with structured format
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 
@@ -153,24 +153,54 @@ class MetricsCollector:
 
     # Prometheus Format Export
     def export_prometheus(self) -> str:
-        """Export metrics in Prometheus format"""
+        """
+        Export metrics in Prometheus text format.
+
+        Follows the Prometheus exposition format specification:
+        https://prometheus.io/docs/instrumenting/exposition_formats/
+
+        Format:
+            # HELP metric_name Description
+            # TYPE metric_name type
+            metric_name{label="value"} numeric_value timestamp
+        """
         output = []
-        output.append(f"# HELP {self.app_name} Project Automata Metrics")
-        output.append(f"# TYPE {self.app_name} gauge")
-        output.append("")
 
         for metric_name, metric in self.metrics.items():
+            # Add HELP comment (required before TYPE)
+            help_text = metric.help_text or f"{metric_name} metric"
+            output.append(f"# HELP {metric_name} {help_text}")
+
             # Add TYPE comment
             output.append(f"# TYPE {metric_name} {metric.type.value}")
 
-            # Format labels
+            # Format labels according to Prometheus spec
             label_str = ""
             if metric.labels:
-                labels = [f'{k}="{v}"' for k, v in metric.labels.items()]
-                label_str = "{" + ",".join(labels) + "}"
+                # Escape special characters in label values
+                escaped_labels = []
+                for k, v in metric.labels.items():
+                    escaped_v = str(v).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+                    escaped_labels.append(f'{k}="{escaped_v}"')
+                label_str = "{" + ",".join(escaped_labels) + "}"
 
-            # Add metric line
-            output.append(f"{metric_name}{label_str} {metric.value}")
+            # Add metric line with proper numeric formatting
+            # Prometheus requires numeric values (no NaN/Inf unless specifically intended)
+            value = metric.value
+            if isinstance(value, float):
+                if value == float('inf'):
+                    value_str = "+Inf"
+                elif value == float('-inf'):
+                    value_str = "-Inf"
+                elif value != value:  # NaN check
+                    value_str = "NaN"
+                else:
+                    value_str = f"{value:.6g}"  # Use general format for clean output
+            else:
+                value_str = str(value)
+
+            output.append(f"{metric_name}{label_str} {value_str}")
+            output.append("")  # Empty line between metrics for readability
 
         return "\n".join(output)
 

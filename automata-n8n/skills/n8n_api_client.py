@@ -20,8 +20,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# Application should configure logging, not libraries
+# logging.basicConfig() removed to prevent global logging configuration conflicts
 logger = logging.getLogger(__name__)
 
 
@@ -112,7 +112,9 @@ class N8nApiClient:
             total=max_retries,
             backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
+            # SECURITY: POST and PATCH removed from retry list to prevent duplicate mutations
+            # Retrying non-idempotent operations can cause data corruption
+            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE"],
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -127,6 +129,29 @@ class N8nApiClient:
             self.session.headers.update({"X-N8N-API-KEY": self.api_key})
 
         logger.debug(f"Initialized n8n API client for {self.api_url}")
+
+    def __enter__(self) -> "N8nApiClient":
+        """Context manager entry - returns self for use in 'with' statements."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - ensures session is properly closed."""
+        self.close()
+        return None  # Don't suppress exceptions
+
+    def close(self) -> None:
+        """
+        Close the HTTP session and release resources.
+
+        Should be called when done using the client, or use context manager:
+
+            with N8nApiClient(api_url, api_key) as client:
+                client.list_workflows()
+            # Session automatically closed
+        """
+        if self.session:
+            self.session.close()
+            logger.debug("Closed n8n API client session")
 
     def _check_rate_limit(self):
         """Check and enforce rate limiting."""
@@ -579,6 +604,24 @@ def create_client_from_env() -> Optional[N8nApiClient]:
         return None
 
     return N8nApiClient(api_url=api_url, api_key=api_key)
+
+
+# ==========================================
+# BACKWARDS COMPATIBILITY NOTE
+# ==========================================
+# This monolithic client is maintained for backwards compatibility.
+# For new code, prefer the modular clients in skills/n8n/:
+#
+#   from skills.n8n import N8nClient, WorkflowClient, HealthClient
+#
+#   # Unified client (recommended)
+#   with N8nClient(api_url, api_key) as client:
+#       workflows = client.list_workflows()
+#
+#   # Or specialized clients for specific needs
+#   with WorkflowClient(api_url, api_key) as wf_client:
+#       workflow = wf_client.get_workflow(id)
+# ==========================================
 
 
 if __name__ == "__main__":
