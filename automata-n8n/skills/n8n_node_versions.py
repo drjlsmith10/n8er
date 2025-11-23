@@ -432,6 +432,65 @@ NODE_TYPE_VERSIONS: Dict[str, Tuple[float, float, float, str]] = {
     # ==========================================
     "n8n-nodes-base.homeAssistant": (1.0, 1.0, 1.0, "Home Assistant"),
     "n8n-nodes-base.philipsHue": (1.0, 1.0, 1.0, "Philips Hue lights"),
+    # ==========================================
+    # CORE FOUNDATIONAL NODES (App-Independent)
+    # ==========================================
+    # Workflow Control
+    "n8n-nodes-base.start": (1.0, 1.0, 1.0, "Workflow start node"),
+    "n8n-nodes-base.n8n": (1.0, 1.0, 1.0, "n8n internal workflow operations"),
+    "n8n-nodes-base.n8nTrigger": (1.0, 1.0, 1.0, "Trigger on n8n events"),
+    "n8n-nodes-base.interval": (1.0, 1.0, 1.0, "Interval-based trigger"),
+    "n8n-nodes-base.debug": (1.0, 1.0, 1.0, "Debug/inspect data"),
+    "n8n-nodes-base.subWorkflow": (1.0, 1.0, 1.0, "Execute sub-workflow"),
+    # Data Type Conversions
+    "n8n-nodes-base.toNumber": (1.0, 1.0, 1.0, "Convert to number"),
+    "n8n-nodes-base.toString": (1.0, 1.0, 1.0, "Convert to string"),
+    "n8n-nodes-base.toBoolean": (1.0, 1.0, 1.0, "Convert to boolean"),
+    "n8n-nodes-base.toDate": (1.0, 1.0, 1.0, "Convert to date"),
+    "n8n-nodes-base.parseJson": (1.0, 1.0, 1.0, "Parse JSON string to object"),
+    # String Operations
+    "n8n-nodes-base.regex": (1.0, 1.0, 1.0, "Regular expression operations"),
+    "n8n-nodes-base.template": (1.0, 1.0, 1.0, "Template string rendering"),
+    "n8n-nodes-base.urlBuilder": (1.0, 1.0, 1.0, "Build/construct URLs"),
+    "n8n-nodes-base.urlParse": (1.0, 1.0, 1.0, "Parse URL components"),
+    "n8n-nodes-base.base64": (1.0, 1.0, 1.0, "Base64 encode/decode"),
+    "n8n-nodes-base.htmlExtract": (1.0, 1.0, 1.0, "Extract data from HTML"),
+    "n8n-nodes-base.extractText": (1.0, 1.0, 1.0, "Extract text from data"),
+    # Math & Number Operations
+    "n8n-nodes-base.math": (1.0, 1.0, 1.0, "Mathematical operations"),
+    "n8n-nodes-base.numberOperation": (1.0, 1.0, 1.0, "Number transformations"),
+    "n8n-nodes-base.round": (1.0, 1.0, 1.0, "Round numbers"),
+    # Binary Data Operations
+    "n8n-nodes-base.binaryOperation": (1.0, 1.0, 1.0, "Operations on binary data"),
+    "n8n-nodes-base.editImage": (1.0, 1.0, 1.0, "Image manipulation"),
+    "n8n-nodes-base.moveToImage": (1.0, 1.0, 1.0, "Move data to image"),
+    "n8n-nodes-base.convertBinaryData": (1.0, 1.0, 1.0, "Convert binary data formats"),
+    # Flow Control Extensions
+    "n8n-nodes-base.multiOutput": (1.0, 1.0, 1.0, "Route to multiple outputs"),
+    "n8n-nodes-base.splitOut": (1.0, 1.0, 1.0, "Split to separate outputs"),
+    "n8n-nodes-base.errorOutput": (1.0, 1.0, 1.0, "Error output handling"),
+    "n8n-nodes-base.loopOver": (1.0, 1.0, 1.0, "Loop over items"),
+    "n8n-nodes-base.splitArray": (1.0, 1.0, 1.0, "Split array into items"),
+    "n8n-nodes-base.mergeByPosition": (1.0, 1.0, 1.0, "Merge by item position"),
+    "n8n-nodes-base.mergeByIndex": (1.0, 1.0, 1.0, "Merge by item index"),
+    # Variable & Context
+    "n8n-nodes-base.setVariable": (1.0, 1.0, 1.0, "Set workflow variable"),
+    "n8n-nodes-base.getVariable": (1.0, 1.0, 1.0, "Get workflow variable"),
+    "n8n-nodes-base.setNodeContext": (1.0, 1.0, 1.0, "Set node context data"),
+    # Authentication & Security
+    "n8n-nodes-base.jwt": (1.0, 1.0, 1.0, "JWT token operations"),
+    "n8n-nodes-base.oauth": (1.0, 1.0, 1.0, "OAuth authentication"),
+    "n8n-nodes-base.basicAuth": (1.0, 1.0, 1.0, "Basic authentication"),
+    # Date & Time
+    "n8n-nodes-base.getTimezoneInfo": (1.0, 1.0, 1.0, "Get timezone information"),
+    "n8n-nodes-base.schedule": (1.0, 1.0, 1.0, "Schedule-based operations"),
+    "n8n-nodes-base.delay": (1.0, 1.0, 1.0, "Delay execution"),
+    # SSE & Streaming
+    "n8n-nodes-base.sseClient": (1.0, 1.0, 1.0, "Server-sent events client"),
+    "n8n-nodes-base.sseClientTrigger": (1.0, 1.0, 1.0, "SSE trigger"),
+    # Webhook Extensions
+    "n8n-nodes-base.waitForWebhook": (1.0, 1.0, 1.0, "Wait for webhook response"),
+    "n8n-nodes-base.webhookResponse": (1.0, 1.0, 1.0, "Send webhook response"),
 }
 
 
