@@ -221,6 +221,217 @@ NODE_TYPE_VERSIONS: Dict[str, Tuple[float, float, float, str]] = {
     "n8n-nodes-base.ssh": (1.0, 1.0, 1.0, "SSH remote execution"),
     "n8n-nodes-base.ftp": (1.0, 1.0, 1.0, "FTP file transfer"),
     "n8n-nodes-base.moveBinaryData": (1.0, 1.0, 1.0, "Move binary data between nodes"),
+    # ==========================================
+    # ADDITIONAL TRIGGER NODES
+    # ==========================================
+    "n8n-nodes-base.scheduleTrigger": (1.2, 1.0, 1.2, "Schedule trigger (replaces cron)"),
+    "n8n-nodes-base.workflowTrigger": (1.0, 1.0, 1.0, "Trigger from another workflow"),
+    "n8n-nodes-base.errorTrigger": (1.0, 1.0, 1.0, "Trigger on workflow errors"),
+    "n8n-nodes-base.executeWorkflowTrigger": (1.0, 1.0, 1.0, "Execute workflow trigger"),
+    "n8n-nodes-base.localFileTrigger": (1.1, 1.0, 1.1, "Watch local file changes"),
+    "n8n-nodes-base.mqttTrigger": (1.0, 1.0, 1.0, "MQTT message trigger"),
+    "n8n-nodes-base.rabbitMQTrigger": (1.0, 1.0, 1.0, "RabbitMQ message trigger"),
+    "n8n-nodes-base.kafkaTrigger": (1.0, 1.0, 1.0, "Apache Kafka trigger"),
+    "n8n-nodes-base.amqpTrigger": (1.0, 1.0, 1.0, "AMQP message trigger"),
+    # ==========================================
+    # ADDITIONAL DATA TRANSFORMATION
+    # ==========================================
+    "n8n-nodes-base.convertToFile": (1.1, 1.0, 1.1, "Convert data to file"),
+    "n8n-nodes-base.extractFromFile": (1.0, 1.0, 1.0, "Extract data from file"),
+    "n8n-nodes-base.dateTime": (2.0, 1.0, 2.0, "Date/time manipulation"),
+    "n8n-nodes-base.compareDatasets": (1.0, 1.0, 1.0, "Compare two datasets"),
+    "n8n-nodes-base.removeDuplicates": (1.0, 1.0, 1.0, "Remove duplicate items"),
+    "n8n-nodes-base.renameKeys": (1.0, 1.0, 1.0, "Rename object keys"),
+    "n8n-nodes-base.sort": (1.0, 1.0, 1.0, "Sort items"),
+    "n8n-nodes-base.limit": (1.0, 1.0, 1.0, "Limit number of items"),
+    "n8n-nodes-base.splitInBatches": (3.0, 1.0, 3.0, "Split into batches"),
+    "n8n-nodes-base.summarize": (1.0, 1.0, 1.0, "Summarize/aggregate data"),
+    "n8n-nodes-base.markdown": (1.0, 1.0, 1.0, "Markdown conversion"),
+    # ==========================================
+    # ADDITIONAL FLOW CONTROL
+    # ==========================================
+    "n8n-nodes-base.executeWorkflow": (1.0, 1.0, 1.0, "Execute another workflow"),
+    "n8n-nodes-base.stickyNote": (1.0, 1.0, 1.0, "Sticky note for documentation"),
+    # ==========================================
+    # ADDITIONAL DATABASES
+    # ==========================================
+    "n8n-nodes-base.supabase": (1.0, 1.0, 1.0, "Supabase database"),
+    "n8n-nodes-base.cockroachDb": (1.0, 1.0, 1.0, "CockroachDB operations"),
+    "n8n-nodes-base.mariaDb": (1.0, 1.0, 1.0, "MariaDB database"),
+    "n8n-nodes-base.couchDb": (1.0, 1.0, 1.0, "CouchDB operations"),
+    "n8n-nodes-base.elasticSearch": (1.0, 1.0, 1.0, "Elasticsearch operations"),
+    "n8n-nodes-base.neo4j": (1.0, 1.0, 1.0, "Neo4j graph database"),
+    "n8n-nodes-base.snowflake": (1.0, 1.0, 1.0, "Snowflake data warehouse"),
+    "n8n-nodes-base.clickHouse": (1.0, 1.0, 1.0, "ClickHouse analytics DB"),
+    "n8n-nodes-base.fauna": (1.0, 1.0, 1.0, "FaunaDB serverless"),
+    # ==========================================
+    # MESSAGING & QUEUES
+    # ==========================================
+    "n8n-nodes-base.mqtt": (1.0, 1.0, 1.0, "MQTT publish/subscribe"),
+    "n8n-nodes-base.rabbitMQ": (1.0, 1.0, 1.0, "RabbitMQ messaging"),
+    "n8n-nodes-base.kafka": (1.0, 1.0, 1.0, "Apache Kafka"),
+    "n8n-nodes-base.amqp": (1.0, 1.0, 1.0, "AMQP protocol"),
+    # ==========================================
+    # MARKETING & EMAIL MARKETING
+    # ==========================================
+    "n8n-nodes-base.mailchimp": (3.0, 1.0, 3.0, "Mailchimp email marketing"),
+    "n8n-nodes-base.mailchimpTrigger": (1.0, 1.0, 1.0, "Mailchimp webhook trigger"),
+    "n8n-nodes-base.activeCampaign": (1.0, 1.0, 1.0, "ActiveCampaign CRM"),
+    "n8n-nodes-base.activeCampaignTrigger": (1.0, 1.0, 1.0, "ActiveCampaign trigger"),
+    "n8n-nodes-base.convertKit": (1.0, 1.0, 1.0, "ConvertKit email"),
+    "n8n-nodes-base.convertKitTrigger": (1.0, 1.0, 1.0, "ConvertKit trigger"),
+    "n8n-nodes-base.drip": (1.0, 1.0, 1.0, "Drip marketing"),
+    "n8n-nodes-base.sendinblue": (1.0, 1.0, 1.0, "Sendinblue (Brevo)"),
+    "n8n-nodes-base.customerIo": (1.0, 1.0, 1.0, "Customer.io messaging"),
+    "n8n-nodes-base.customerIoTrigger": (1.0, 1.0, 1.0, "Customer.io trigger"),
+    "n8n-nodes-base.lemlist": (1.0, 1.0, 1.0, "Lemlist outreach"),
+    "n8n-nodes-base.lemlistTrigger": (1.0, 1.0, 1.0, "Lemlist trigger"),
+    # ==========================================
+    # CUSTOMER SUPPORT
+    # ==========================================
+    "n8n-nodes-base.zendesk": (1.0, 1.0, 1.0, "Zendesk support"),
+    "n8n-nodes-base.zendeskTrigger": (1.0, 1.0, 1.0, "Zendesk trigger"),
+    "n8n-nodes-base.intercom": (1.0, 1.0, 1.0, "Intercom messaging"),
+    "n8n-nodes-base.freshdesk": (1.0, 1.0, 1.0, "Freshdesk support"),
+    "n8n-nodes-base.helpScout": (1.0, 1.0, 1.0, "Help Scout support"),
+    "n8n-nodes-base.helpScoutTrigger": (1.0, 1.0, 1.0, "Help Scout trigger"),
+    "n8n-nodes-base.crisp": (1.0, 1.0, 1.0, "Crisp chat"),
+    "n8n-nodes-base.serviceNow": (1.0, 1.0, 1.0, "ServiceNow ITSM"),
+    # ==========================================
+    # HR & RECRUITING
+    # ==========================================
+    "n8n-nodes-base.bambooHr": (1.0, 1.0, 1.0, "BambooHR"),
+    "n8n-nodes-base.workable": (1.0, 1.0, 1.0, "Workable recruiting"),
+    "n8n-nodes-base.workableTrigger": (1.0, 1.0, 1.0, "Workable trigger"),
+    "n8n-nodes-base.greenhouse": (1.0, 1.0, 1.0, "Greenhouse recruiting"),
+    "n8n-nodes-base.lever": (1.0, 1.0, 1.0, "Lever recruiting"),
+    # ==========================================
+    # DEVOPS & CI/CD
+    # ==========================================
+    "n8n-nodes-base.jenkins": (1.0, 1.0, 1.0, "Jenkins CI/CD"),
+    "n8n-nodes-base.circleCI": (1.0, 1.0, 1.0, "CircleCI pipelines"),
+    "n8n-nodes-base.bitbucket": (1.0, 1.0, 1.0, "Bitbucket repositories"),
+    "n8n-nodes-base.bitbucketTrigger": (1.0, 1.0, 1.0, "Bitbucket trigger"),
+    "n8n-nodes-base.pagerDuty": (1.0, 1.0, 1.0, "PagerDuty incidents"),
+    "n8n-nodes-base.opsgenie": (1.0, 1.0, 1.0, "Opsgenie alerting"),
+    "n8n-nodes-base.uptimeRobot": (1.0, 1.0, 1.0, "UptimeRobot monitoring"),
+    # ==========================================
+    # ADDITIONAL AI/ML NODES
+    # ==========================================
+    "n8n-nodes-base.googleAi": (1.0, 1.0, 1.0, "Google AI (Gemini)"),
+    "n8n-nodes-base.mistralAi": (1.0, 1.0, 1.0, "Mistral AI"),
+    "n8n-nodes-base.cohere": (1.0, 1.0, 1.0, "Cohere AI"),
+    "n8n-nodes-base.replicate": (1.0, 1.0, 1.0, "Replicate ML models"),
+    "n8n-nodes-base.deepL": (1.0, 1.0, 1.0, "DeepL translation"),
+    "n8n-nodes-base.googleTranslate": (2.0, 1.0, 2.0, "Google Translate"),
+    "n8n-nodes-base.pinecone": (1.0, 1.0, 1.0, "Pinecone vector DB"),
+    "n8n-nodes-base.qdrant": (1.0, 1.0, 1.0, "Qdrant vector DB"),
+    "n8n-nodes-base.weaviate": (1.0, 1.0, 1.0, "Weaviate vector DB"),
+    # ==========================================
+    # ADDITIONAL CLOUD PROVIDERS
+    # ==========================================
+    "n8n-nodes-base.azureStorage": (1.0, 1.0, 1.0, "Azure Blob Storage"),
+    "n8n-nodes-base.azureCosmosDb": (1.0, 1.0, 1.0, "Azure Cosmos DB"),
+    "n8n-nodes-base.azureDevOps": (1.0, 1.0, 1.0, "Azure DevOps"),
+    "n8n-nodes-base.digitalOcean": (1.0, 1.0, 1.0, "DigitalOcean Droplets"),
+    "n8n-nodes-base.cloudflare": (1.0, 1.0, 1.0, "Cloudflare"),
+    "n8n-nodes-base.vercel": (1.0, 1.0, 1.0, "Vercel platform"),
+    "n8n-nodes-base.netlify": (1.0, 1.0, 1.0, "Netlify platform"),
+    # ==========================================
+    # ADDITIONAL ECOMMERCE
+    # ==========================================
+    "n8n-nodes-base.magento": (1.0, 1.0, 1.0, "Magento/Adobe Commerce"),
+    "n8n-nodes-base.bigCommerce": (1.0, 1.0, 1.0, "BigCommerce"),
+    "n8n-nodes-base.gumroad": (1.0, 1.0, 1.0, "Gumroad sales"),
+    "n8n-nodes-base.chargebee": (1.0, 1.0, 1.0, "Chargebee subscriptions"),
+    "n8n-nodes-base.square": (1.0, 1.0, 1.0, "Square payments"),
+    # ==========================================
+    # FORMS & SURVEYS
+    # ==========================================
+    "n8n-nodes-base.typeform": (1.0, 1.0, 1.0, "Typeform forms"),
+    "n8n-nodes-base.typeformTrigger": (1.0, 1.0, 1.0, "Typeform trigger"),
+    "n8n-nodes-base.jotForm": (1.0, 1.0, 1.0, "JotForm"),
+    "n8n-nodes-base.jotFormTrigger": (1.0, 1.0, 1.0, "JotForm trigger"),
+    "n8n-nodes-base.surveyMonkey": (1.0, 1.0, 1.0, "SurveyMonkey"),
+    "n8n-nodes-base.tally": (1.0, 1.0, 1.0, "Tally forms"),
+    "n8n-nodes-base.tallyTrigger": (1.0, 1.0, 1.0, "Tally trigger"),
+    # ==========================================
+    # SCHEDULING & CALENDARS
+    # ==========================================
+    "n8n-nodes-base.calendly": (1.0, 1.0, 1.0, "Calendly scheduling"),
+    "n8n-nodes-base.calendlyTrigger": (1.0, 1.0, 1.0, "Calendly trigger"),
+    "n8n-nodes-base.cal": (1.0, 1.0, 1.0, "Cal.com scheduling"),
+    "n8n-nodes-base.calTrigger": (1.0, 1.0, 1.0, "Cal.com trigger"),
+    "n8n-nodes-base.acuityScheduling": (1.0, 1.0, 1.0, "Acuity scheduling"),
+    "n8n-nodes-base.acuitySchedulingTrigger": (1.0, 1.0, 1.0, "Acuity trigger"),
+    # ==========================================
+    # CONTENT & MEDIA
+    # ==========================================
+    "n8n-nodes-base.wordpress": (1.0, 1.0, 1.0, "WordPress CMS"),
+    "n8n-nodes-base.ghost": (1.0, 1.0, 1.0, "Ghost publishing"),
+    "n8n-nodes-base.medium": (1.0, 1.0, 1.0, "Medium publishing"),
+    "n8n-nodes-base.contentful": (1.0, 1.0, 1.0, "Contentful CMS"),
+    "n8n-nodes-base.strapi": (1.0, 1.0, 1.0, "Strapi CMS"),
+    "n8n-nodes-base.cloudinary": (1.0, 1.0, 1.0, "Cloudinary media"),
+    "n8n-nodes-base.vimeo": (1.0, 1.0, 1.0, "Vimeo video"),
+    "n8n-nodes-base.spotify": (1.0, 1.0, 1.0, "Spotify API"),
+    # ==========================================
+    # DOCUMENT & SIGNATURES
+    # ==========================================
+    "n8n-nodes-base.docuSign": (1.0, 1.0, 1.0, "DocuSign e-signatures"),
+    "n8n-nodes-base.pandaDoc": (1.0, 1.0, 1.0, "PandaDoc documents"),
+    # ==========================================
+    # ADDITIONAL CRM/SALES
+    # ==========================================
+    "n8n-nodes-base.copper": (1.0, 1.0, 1.0, "Copper CRM"),
+    "n8n-nodes-base.close": (1.0, 1.0, 1.0, "Close CRM"),
+    "n8n-nodes-base.apolloIo": (1.0, 1.0, 1.0, "Apollo.io sales"),
+    "n8n-nodes-base.clearbit": (1.0, 1.0, 1.0, "Clearbit enrichment"),
+    "n8n-nodes-base.hunter": (1.0, 1.0, 1.0, "Hunter.io emails"),
+    # ==========================================
+    # ADDITIONAL PROJECT MANAGEMENT
+    # ==========================================
+    "n8n-nodes-base.basecamp": (1.0, 1.0, 1.0, "Basecamp"),
+    "n8n-nodes-base.todoist": (1.0, 1.0, 1.0, "Todoist tasks"),
+    "n8n-nodes-base.wrike": (1.0, 1.0, 1.0, "Wrike projects"),
+    "n8n-nodes-base.smartsheet": (1.0, 1.0, 1.0, "Smartsheet"),
+    "n8n-nodes-base.linearApp": (1.0, 1.0, 1.0, "Linear issues"),
+    "n8n-nodes-base.linearAppTrigger": (1.0, 1.0, 1.0, "Linear trigger"),
+    "n8n-nodes-base.coda": (1.0, 1.0, 1.0, "Coda docs"),
+    "n8n-nodes-base.confluence": (1.0, 1.0, 1.0, "Atlassian Confluence"),
+    # ==========================================
+    # TELEPHONY & SMS
+    # ==========================================
+    "n8n-nodes-base.vonage": (1.0, 1.0, 1.0, "Vonage communications"),
+    "n8n-nodes-base.plivo": (1.0, 1.0, 1.0, "Plivo SMS/voice"),
+    "n8n-nodes-base.messagebird": (1.0, 1.0, 1.0, "MessageBird SMS"),
+    # ==========================================
+    # ADDITIONAL UTILITIES
+    # ==========================================
+    "n8n-nodes-base.qrCode": (1.0, 1.0, 1.0, "QR code generation"),
+    "n8n-nodes-base.ipInfo": (1.0, 1.0, 1.0, "IP geolocation"),
+    "n8n-nodes-base.whois": (1.0, 1.0, 1.0, "WHOIS lookup"),
+    "n8n-nodes-base.rss": (1.0, 1.0, 1.0, "RSS feed reading"),
+    "n8n-nodes-base.graphql": (1.0, 1.0, 1.0, "GraphQL requests"),
+    # ==========================================
+    # ADDITIONAL ANALYTICS
+    # ==========================================
+    "n8n-nodes-base.amplitude": (1.0, 1.0, 1.0, "Amplitude analytics"),
+    "n8n-nodes-base.posthog": (1.0, 1.0, 1.0, "PostHog analytics"),
+    "n8n-nodes-base.splitIo": (1.0, 1.0, 1.0, "Split.io feature flags"),
+    # ==========================================
+    # COLLABORATION
+    # ==========================================
+    "n8n-nodes-base.microsoftTeams": (2.0, 1.0, 2.0, "Microsoft Teams"),
+    "n8n-nodes-base.zoom": (1.0, 1.0, 1.0, "Zoom meetings"),
+    "n8n-nodes-base.webex": (1.0, 1.0, 1.0, "Webex meetings"),
+    "n8n-nodes-base.pushover": (1.0, 1.0, 1.0, "Pushover notifications"),
+    "n8n-nodes-base.pushbullet": (1.0, 1.0, 1.0, "Pushbullet notifications"),
+    # ==========================================
+    # IOT & SMART HOME
+    # ==========================================
+    "n8n-nodes-base.homeAssistant": (1.0, 1.0, 1.0, "Home Assistant"),
+    "n8n-nodes-base.philipsHue": (1.0, 1.0, 1.0, "Philips Hue lights"),
 }
 
 
