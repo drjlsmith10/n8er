@@ -491,6 +491,33 @@ NODE_TYPE_VERSIONS: Dict[str, Tuple[float, float, float, str]] = {
     # Webhook Extensions
     "n8n-nodes-base.waitForWebhook": (1.0, 1.0, 1.0, "Wait for webhook response"),
     "n8n-nodes-base.webhookResponse": (1.0, 1.0, 1.0, "Send webhook response"),
+    # ==========================================
+    # ADDITIONAL CORE NODES (from n8n docs)
+    # ==========================================
+    # Triggers
+    "n8n-nodes-base.activationTrigger": (1.0, 1.0, 1.0, "Trigger on workflow activation"),
+    "n8n-nodes-base.evaluationTrigger": (1.0, 1.0, 1.0, "Evaluation workflow trigger"),
+    # AI & LLM Nodes
+    "n8n-nodes-base.aiTransform": (1.0, 1.0, 1.0, "AI-powered data transformation"),
+    "n8n-nodes-base.evaluation": (1.0, 1.0, 1.0, "Evaluate/test workflow outputs"),
+    "n8n-nodes-base.guardrails": (1.0, 1.0, 1.0, "AI guardrails and safety checks"),
+    # Chat & MCP
+    "n8n-nodes-langchain.chatTrigger": (1.0, 1.0, 1.0, "Chat conversation trigger"),
+    "n8n-nodes-langchain.respondToChat": (1.0, 1.0, 1.0, "Respond to chat message"),
+    "n8n-nodes-langchain.mcpTrigger": (1.0, 1.0, 1.0, "MCP protocol trigger"),
+    # Data Operations
+    "n8n-nodes-base.dataTable": (1.0, 1.0, 1.0, "Data table operations"),
+    "n8n-nodes-base.executionData": (1.0, 1.0, 1.0, "Access execution data"),
+    "n8n-nodes-base.readWriteFile": (1.0, 1.0, 1.0, "Read/write files combined"),
+    # Authentication & Directory
+    "n8n-nodes-base.ldap": (1.0, 1.0, 1.0, "LDAP directory operations"),
+    "n8n-nodes-base.totp": (1.0, 1.0, 1.0, "Time-based one-time passwords"),
+    # Development & Debug
+    "n8n-nodes-base.debugHelper": (1.0, 1.0, 1.0, "Debug helper utilities"),
+    # Forms
+    "n8n-nodes-base.form": (1.0, 1.0, 1.0, "Form node for data collection"),
+    # Version Control
+    "n8n-nodes-base.git": (1.0, 1.0, 1.0, "Git operations"),
 }
 
 
