@@ -1010,6 +1010,341 @@ return aggregated;
 
         return builder.build()
 
+    @staticmethod
+    def ai_content_processor() -> Dict:
+        """
+        Pattern: Webhook → AI Processing → Multi-destination Output
+        Source: Automata built-in template
+
+        Receive content, process with AI, distribute to multiple channels.
+        Showcases AI/ML nodes integration.
+        """
+        builder = WorkflowBuilder("AI Content Processor")
+
+        # Webhook trigger
+        builder.add_trigger(
+            "webhook",
+            "Content Webhook",
+            parameters={
+                "path": "process-content",
+                "httpMethod": "POST",
+                "responseMode": "responseNode",
+            },
+        )
+
+        # Process with OpenAI
+        builder.add_node(
+            "n8n-nodes-base.openAi",
+            "AI Analysis",
+            parameters={
+                "resource": "chat",
+                "operation": "message",
+                "model": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "Analyze this content and provide: 1) Summary 2) Sentiment 3) Key topics. Content: {{ $json.content }}"
+                        }
+                    ]
+                },
+            },
+        )
+
+        # Parse AI response
+        builder.add_node(
+            "n8n-nodes-base.set",
+            "Parse Response",
+            type_version=3,
+            parameters={
+                "mode": "manual",
+                "duplicateItem": False,
+                "assignments": {
+                    "assignments": [
+                        {"name": "original_content", "value": "={{ $('Content Webhook').item.json.content }}"},
+                        {"name": "ai_analysis", "value": "={{ $json.message.content }}"},
+                        {"name": "processed_at", "value": "={{ $now.toISO() }}"},
+                    ]
+                },
+            },
+        )
+
+        # Send to Slack
+        builder.add_node(
+            "n8n-nodes-base.slack",
+            "Post to Slack",
+            type_version=2,
+            parameters={
+                "resource": "message",
+                "operation": "post",
+                "channel": "#content-analysis",
+                "text": "New content analyzed:\n{{ $json.ai_analysis }}",
+            },
+        )
+
+        # Respond to webhook
+        builder.add_node(
+            "n8n-nodes-base.respondToWebhook",
+            "Send Response",
+            parameters={
+                "respondWith": "json",
+                "responseBody": '={{ JSON.stringify({ success: true, analysis: $json.ai_analysis }) }}',
+            },
+        )
+
+        # Connect nodes
+        builder.connect("Content Webhook", "AI Analysis")
+        builder.connect("AI Analysis", "Parse Response")
+        builder.connect("Parse Response", "Post to Slack")
+        builder.connect("Post to Slack", "Send Response")
+
+        return builder.build()
+
+    @staticmethod
+    def ecommerce_order_processor() -> Dict:
+        """
+        Pattern: Shopify Trigger → Process → Email + Slack + Database
+        Source: Automata built-in template
+
+        Handle new orders from e-commerce, notify team, update database.
+        Showcases payment/e-commerce nodes.
+        """
+        builder = WorkflowBuilder("E-commerce Order Processor")
+
+        # Shopify trigger (manual for now, real would use shopifyTrigger)
+        builder.add_trigger(
+            "webhook",
+            "Order Webhook",
+            parameters={
+                "path": "shopify-order",
+                "httpMethod": "POST",
+            },
+        )
+
+        # Transform order data
+        builder.add_node(
+            "n8n-nodes-base.set",
+            "Parse Order",
+            type_version=3,
+            parameters={
+                "mode": "manual",
+                "assignments": {
+                    "assignments": [
+                        {"name": "order_id", "value": "={{ $json.id }}"},
+                        {"name": "customer_email", "value": "={{ $json.email }}"},
+                        {"name": "customer_name", "value": "={{ $json.customer.first_name }} {{ $json.customer.last_name }}"},
+                        {"name": "total", "value": "={{ $json.total_price }}"},
+                        {"name": "items_count", "value": "={{ $json.line_items.length }}"},
+                    ]
+                },
+            },
+        )
+
+        # Send confirmation email
+        builder.add_node(
+            "n8n-nodes-base.emailSend",
+            "Send Confirmation",
+            type_version=2,
+            parameters={
+                "fromEmail": "orders@example.com",
+                "toEmail": "={{ $json.customer_email }}",
+                "subject": "Order #{{ $json.order_id }} Confirmed!",
+                "text": "Thank you {{ $json.customer_name }} for your order of ${{ $json.total }}!",
+            },
+        )
+
+        # Notify team on Slack
+        builder.add_node(
+            "n8n-nodes-base.slack",
+            "Notify Team",
+            type_version=2,
+            parameters={
+                "resource": "message",
+                "operation": "post",
+                "channel": "#orders",
+                "text": ":package: New order #{{ $json.order_id }} - ${{ $json.total }} ({{ $json.items_count }} items)",
+            },
+        )
+
+        # Store in database
+        builder.add_node(
+            "n8n-nodes-base.postgres",
+            "Log to DB",
+            type_version=2,
+            parameters={
+                "operation": "insert",
+                "table": "orders",
+                "columns": "order_id,customer_email,total,items_count,created_at",
+            },
+        )
+
+        # Connect nodes
+        builder.connect("Order Webhook", "Parse Order")
+        builder.connect("Parse Order", "Send Confirmation")
+        builder.connect("Parse Order", "Notify Team")
+        builder.connect("Parse Order", "Log to DB")
+
+        return builder.build()
+
+    @staticmethod
+    def github_jira_sync() -> Dict:
+        """
+        Pattern: GitHub Issue → Transform → Jira Ticket
+        Source: Automata built-in template
+
+        Sync GitHub issues to Jira for project management.
+        Showcases project management nodes.
+        """
+        builder = WorkflowBuilder("GitHub to Jira Sync")
+
+        # GitHub webhook trigger
+        builder.add_trigger(
+            "webhook",
+            "GitHub Webhook",
+            parameters={
+                "path": "github-issues",
+                "httpMethod": "POST",
+            },
+        )
+
+        # Filter for new issues only
+        builder.add_node(
+            "n8n-nodes-base.if",
+            "Is New Issue",
+            type_version=2,
+            parameters={
+                "conditions": {
+                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                    "conditions": [
+                        {
+                            "id": "check-action",
+                            "leftValue": "={{ $json.action }}",
+                            "rightValue": "opened",
+                            "operator": {"type": "string", "operation": "equals"},
+                        }
+                    ],
+                    "combinator": "and",
+                },
+            },
+        )
+
+        # Transform to Jira format
+        builder.add_node(
+            "n8n-nodes-base.set",
+            "Map to Jira",
+            type_version=3,
+            parameters={
+                "mode": "manual",
+                "assignments": {
+                    "assignments": [
+                        {"name": "summary", "value": "[GitHub] {{ $json.issue.title }}"},
+                        {"name": "description", "value": "{{ $json.issue.body }}\n\n---\nGitHub: {{ $json.issue.html_url }}"},
+                        {"name": "labels", "value": "={{ $json.issue.labels.map(l => l.name) }}"},
+                        {"name": "github_id", "value": "={{ $json.issue.number }}"},
+                    ]
+                },
+            },
+        )
+
+        # Create Jira ticket
+        builder.add_node(
+            "n8n-nodes-base.jira",
+            "Create Jira Issue",
+            parameters={
+                "resource": "issue",
+                "operation": "create",
+                "project": "PROJ",
+                "issueType": "Task",
+                "summary": "={{ $json.summary }}",
+                "description": "={{ $json.description }}",
+            },
+        )
+
+        # Connect nodes
+        builder.connect("GitHub Webhook", "Is New Issue")
+        builder.connect("Is New Issue", "Map to Jira", "true")
+        builder.connect("Map to Jira", "Create Jira Issue")
+
+        return builder.build()
+
+    @staticmethod
+    def cloud_file_processor() -> Dict:
+        """
+        Pattern: Google Drive Trigger → Process → Multi-cloud Backup
+        Source: Automata built-in template
+
+        Process files from Google Drive, backup to S3 and Dropbox.
+        Showcases cloud storage nodes.
+        """
+        builder = WorkflowBuilder("Cloud File Processor")
+
+        # Manual trigger (real would use googleDriveTrigger)
+        builder.add_trigger(
+            "manual",
+            "Start",
+        )
+
+        # Get files from Google Drive
+        builder.add_node(
+            "n8n-nodes-base.googleDrive",
+            "Get Drive Files",
+            type_version=3,
+            parameters={
+                "operation": "list",
+                "folderId": "root",
+                "filter": {"mimeType": "application/pdf"},
+            },
+        )
+
+        # Split for batch processing
+        builder.add_node(
+            "n8n-nodes-base.splitInBatches",
+            "Split Batches",
+            type_version=3,
+            parameters={"batchSize": 5},
+        )
+
+        # Download file
+        builder.add_node(
+            "n8n-nodes-base.googleDrive",
+            "Download File",
+            type_version=3,
+            parameters={
+                "operation": "download",
+                "fileId": "={{ $json.id }}",
+            },
+        )
+
+        # Upload to S3
+        builder.add_node(
+            "n8n-nodes-base.awsS3",
+            "Upload to S3",
+            parameters={
+                "operation": "upload",
+                "bucketName": "backup-bucket",
+                "fileName": "={{ $json.name }}",
+            },
+        )
+
+        # Upload to Dropbox
+        builder.add_node(
+            "n8n-nodes-base.dropbox",
+            "Upload to Dropbox",
+            type_version=2,
+            parameters={
+                "operation": "upload",
+                "path": "/backups/{{ $json.name }}",
+            },
+        )
+
+        # Connect nodes
+        builder.connect("Start", "Get Drive Files")
+        builder.connect("Get Drive Files", "Split Batches")
+        builder.connect("Split Batches", "Download File")
+        builder.connect("Download File", "Upload to S3")
+        builder.connect("Download File", "Upload to Dropbox")
+
+        return builder.build()
+
 
 # Integration function
 def get_template_by_name(template_name: str, kb: Optional[KnowledgeBase] = None) -> Dict:
@@ -1029,6 +1364,11 @@ def get_template_by_name(template_name: str, kb: Optional[KnowledgeBase] = None)
         # Issue #11 - Enhanced Error Handling
         "webhook_error_handling": CommunityTemplateLibrary.webhook_with_error_handling,
         "circuit_breaker": CommunityTemplateLibrary.circuit_breaker_pattern,
+        # Phase 3 - New templates
+        "ai_content": CommunityTemplateLibrary.ai_content_processor,
+        "ecommerce_orders": CommunityTemplateLibrary.ecommerce_order_processor,
+        "github_jira": CommunityTemplateLibrary.github_jira_sync,
+        "cloud_backup": CommunityTemplateLibrary.cloud_file_processor,
     }
 
     # Try community templates first

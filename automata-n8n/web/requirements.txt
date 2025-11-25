@@ -1,0 +1,11 @@
+# Automata Web Interface Requirements
+
+# Core web framework
+flask>=2.3.0
+
+# Optional LLM providers (install the ones you want to use)
+# openai>=1.0.0
+# anthropic>=0.7.0
+
+# Already included in main requirements.txt:
+# requests (for HTTP calls and Ollama)

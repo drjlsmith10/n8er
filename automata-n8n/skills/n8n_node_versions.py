@@ -221,6 +221,96 @@ NODE_TYPE_VERSIONS: Dict[str, Tuple[float, float, float, str]] = {
     "n8n-nodes-base.ssh": (1.0, 1.0, 1.0, "SSH remote execution"),
     "n8n-nodes-base.ftp": (1.0, 1.0, 1.0, "FTP file transfer"),
     "n8n-nodes-base.moveBinaryData": (1.0, 1.0, 1.0, "Move binary data between nodes"),
+    # ==========================================
+    # ADDITIONAL FOUNDATIONAL NODES
+    # ==========================================
+    "n8n-nodes-base.dateTime": (2.0, 1.0, 2.0, "Date/time manipulation"),
+    "n8n-nodes-base.markdown": (1.0, 1.0, 1.0, "Markdown to HTML conversion"),
+    "n8n-nodes-base.extractFromFile": (1.0, 1.0, 1.0, "Extract data from files"),
+    "n8n-nodes-base.convertToFile": (1.0, 1.0, 1.0, "Convert data to file format"),
+    "n8n-nodes-base.sort": (1.0, 1.0, 1.0, "Sort items"),
+    "n8n-nodes-base.limit": (1.0, 1.0, 1.0, "Limit number of items"),
+    "n8n-nodes-base.removeDuplicates": (1.0, 1.0, 1.0, "Remove duplicate items"),
+    "n8n-nodes-base.renameKeys": (1.0, 1.0, 1.0, "Rename object keys"),
+    "n8n-nodes-base.compareDatasets": (1.0, 1.0, 1.0, "Compare two datasets"),
+    "n8n-nodes-base.summarize": (1.0, 1.0, 1.0, "Summarize/aggregate data"),
+    "n8n-nodes-base.splitOut": (1.0, 1.0, 1.0, "Split array into items"),
+    "n8n-nodes-base.debounce": (1.0, 1.0, 1.0, "Debounce workflow triggers"),
+    "n8n-nodes-base.executeWorkflow": (1.0, 1.0, 1.0, "Execute another workflow"),
+    "n8n-nodes-base.executeWorkflowTrigger": (1.0, 1.0, 1.0, "Trigger for sub-workflows"),
+    "n8n-nodes-base.errorTrigger": (1.0, 1.0, 1.0, "Trigger on workflow errors"),
+    "n8n-nodes-base.scheduleTrigger": (1.2, 1.0, 1.2, "Schedule/interval trigger"),
+    # ==========================================
+    # SEARCH / WEB NODES
+    # ==========================================
+    "n8n-nodes-base.braveSearch": (1.0, 1.0, 1.0, "Brave Search API"),
+    "n8n-nodes-base.googleSearch": (1.0, 1.0, 1.0, "Google Custom Search"),
+    "n8n-nodes-base.serpApi": (1.0, 1.0, 1.0, "SerpAPI search results"),
+    "n8n-nodes-base.webScraper": (1.0, 1.0, 1.0, "Web scraping/extraction"),
+    # ==========================================
+    # DATABASE - ADDITIONAL
+    # ==========================================
+    "n8n-nodes-base.supabase": (1.0, 1.0, 1.0, "Supabase database operations"),
+    "n8n-nodes-base.neonDb": (1.0, 1.0, 1.0, "Neon serverless Postgres"),
+    "n8n-nodes-base.planetScale": (1.0, 1.0, 1.0, "PlanetScale MySQL"),
+    "n8n-nodes-base.firebase": (1.0, 1.0, 1.0, "Firebase/Firestore"),
+    "n8n-nodes-base.cockroachDb": (1.0, 1.0, 1.0, "CockroachDB"),
+    "n8n-nodes-base.elasticSearch": (1.0, 1.0, 1.0, "Elasticsearch"),
+    "n8n-nodes-base.pinecone": (1.0, 1.0, 1.0, "Pinecone vector database"),
+    "n8n-nodes-base.qdrant": (1.0, 1.0, 1.0, "Qdrant vector database"),
+    "n8n-nodes-base.weaviate": (1.0, 1.0, 1.0, "Weaviate vector database"),
+    # ==========================================
+    # DEPLOYMENT / DEVOPS
+    # ==========================================
+    "n8n-nodes-base.vercel": (1.0, 1.0, 1.0, "Vercel deployment"),
+    "n8n-nodes-base.netlify": (1.0, 1.0, 1.0, "Netlify deployment"),
+    "n8n-nodes-base.cloudflare": (1.0, 1.0, 1.0, "Cloudflare API"),
+    "n8n-nodes-base.docker": (1.0, 1.0, 1.0, "Docker operations"),
+    "n8n-nodes-base.kubernetes": (1.0, 1.0, 1.0, "Kubernetes operations"),
+    "n8n-nodes-base.terraform": (1.0, 1.0, 1.0, "Terraform Cloud"),
+    # ==========================================
+    # ADDITIONAL AI/ML NODES
+    # ==========================================
+    "n8n-nodes-base.groq": (1.0, 1.0, 1.0, "Groq LLM API"),
+    "n8n-nodes-base.mistral": (1.0, 1.0, 1.0, "Mistral AI"),
+    "n8n-nodes-base.perplexity": (1.0, 1.0, 1.0, "Perplexity AI"),
+    "n8n-nodes-base.cohere": (1.0, 1.0, 1.0, "Cohere AI"),
+    "n8n-nodes-base.replicate": (1.0, 1.0, 1.0, "Replicate model hosting"),
+    "n8n-nodes-base.stabilityAi": (1.0, 1.0, 1.0, "Stability AI image generation"),
+    "n8n-nodes-base.elevenLabs": (1.0, 1.0, 1.0, "ElevenLabs text-to-speech"),
+    "n8n-nodes-base.deepL": (1.0, 1.0, 1.0, "DeepL translation"),
+    # ==========================================
+    # ADDITIONAL COMMUNICATION
+    # ==========================================
+    "n8n-nodes-base.whatsApp": (1.0, 1.0, 1.0, "WhatsApp Business API"),
+    "n8n-nodes-base.microsoftTeams": (2.0, 1.0, 2.0, "Microsoft Teams"),
+    "n8n-nodes-base.zoom": (1.0, 1.0, 1.0, "Zoom meetings"),
+    "n8n-nodes-base.calendly": (1.0, 1.0, 1.0, "Calendly scheduling"),
+    "n8n-nodes-base.intercom": (1.0, 1.0, 1.0, "Intercom messaging"),
+    "n8n-nodes-base.crisp": (1.0, 1.0, 1.0, "Crisp chat"),
+    "n8n-nodes-base.zendesk": (1.0, 1.0, 1.0, "Zendesk support"),
+    # ==========================================
+    # FORMS / SURVEYS
+    # ==========================================
+    "n8n-nodes-base.typeform": (1.0, 1.0, 1.0, "Typeform surveys"),
+    "n8n-nodes-base.jotform": (1.0, 1.0, 1.0, "JotForm forms"),
+    "n8n-nodes-base.surveyMonkey": (1.0, 1.0, 1.0, "SurveyMonkey"),
+    "n8n-nodes-base.googleForms": (1.0, 1.0, 1.0, "Google Forms"),
+    # ==========================================
+    # MARKETING / CRM - ADDITIONAL
+    # ==========================================
+    "n8n-nodes-base.mailchimp": (2.0, 1.0, 2.0, "Mailchimp email marketing"),
+    "n8n-nodes-base.activeCampaign": (1.0, 1.0, 1.0, "ActiveCampaign"),
+    "n8n-nodes-base.convertKit": (1.0, 1.0, 1.0, "ConvertKit"),
+    "n8n-nodes-base.lemlist": (1.0, 1.0, 1.0, "Lemlist email outreach"),
+    "n8n-nodes-base.hunter": (1.0, 1.0, 1.0, "Hunter.io email finder"),
+    "n8n-nodes-base.clearbit": (1.0, 1.0, 1.0, "Clearbit enrichment"),
+    # ==========================================
+    # SCHEDULING / CALENDAR - ADDITIONAL
+    # ==========================================
+    "n8n-nodes-base.cal": (1.0, 1.0, 1.0, "Cal.com scheduling"),
+    "n8n-nodes-base.outlook": (2.0, 1.0, 2.0, "Microsoft Outlook"),
+    "n8n-nodes-base.iCalendar": (1.0, 1.0, 1.0, "iCalendar format"),
 }
 
 

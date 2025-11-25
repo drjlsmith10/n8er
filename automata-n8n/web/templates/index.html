@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automata - n8n Workflow Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 15px;
+        }
+
+        .status-badge.available {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-badge.unavailable {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #333;
+        }
+
+        .panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #333;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .template-card {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .template-card.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .template-card h3 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .template-card p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #333;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .output-panel {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 900px) {
+            .output-panel {
+                grid-column: span 1;
+            }
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .output-meta {
+            display: flex;
+            gap: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .json-output {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .json-output pre {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            color: #22c55e;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .success-banner {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-banner.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Automata</h1>
+            <p>Generate n8n workflows from natural language</p>
+            {% if llm_status == 'available' %}
+            <span class="status-badge available">LLM Available</span>
+            {% else %}
+            <span class="status-badge unavailable">LLM Unavailable (using keyword matching)</span>
+            {% endif %}
+        </header>
+
+        <div class="main-grid">
+            <!-- Prompt Input Panel -->
+            <div class="panel">
+                <h2>Describe Your Workflow</h2>
+                <div class="input-group">
+                    <label for="prompt">What should your workflow do?</label>
+                    <textarea id="prompt" placeholder="Example: When I receive a webhook, save the data to PostgreSQL and send a Slack notification to #alerts"></textarea>
+                </div>
+
+                {% if llm_status == 'available' %}
+                <div class="checkbox-group">
+                    <input type="checkbox" id="use-llm" checked>
+                    <label for="use-llm">Use AI for better understanding</label>
+                </div>
+                {% endif %}
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="generateFromPrompt()">Generate Workflow</button>
+                </div>
+            </div>
+
+            <!-- Templates Panel -->
+            <div class="panel">
+                <h2>Or Choose a Template</h2>
+                <div class="templates-grid">
+                    {% for key, template in templates.items() %}
+                    <div class="template-card" data-template="{{ key }}" onclick="selectTemplate('{{ key }}')">
+                        <h3>{{ template.name }}</h3>
+                        <p>{{ template.description }}</p>
+                        <span class="category-badge">{{ template.category }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="generateFromTemplate()">Use Selected Template</button>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="panel output-panel">
+                <div class="output-header">
+                    <h2>Generated Workflow</h2>
+                    <div class="output-meta">
+                        <span id="node-count">Nodes: -</span>
+                        <span id="method-used">Method: -</span>
+                    </div>
+                </div>
+
+                <div class="success-banner" id="success-banner">
+                    Workflow generated successfully!
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Generating workflow...</p>
+                </div>
+
+                <div class="json-output" id="output">
+                    <pre id="workflow-json">// Your generated workflow will appear here</pre>
+                </div>
+
+                <div class="error" id="error" style="display: none;"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="downloadWorkflow()" id="download-btn" disabled>Download JSON</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard()">Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Project Automata - n8n Workflow Generator</p>
+            <p>Supports 182+ n8n nodes | 12 built-in templates</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentWorkflow = null;
+        let selectedTemplate = null;
+
+        function selectTemplate(templateKey) {
+            // Remove previous selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Select new template
+            const card = document.querySelector(`[data-template="${templateKey}"]`);
+            if (card) {
+                card.classList.add('selected');
+                selectedTemplate = templateKey;
+            }
+        }
+
+        async function generateFromPrompt() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                showError('Please enter a workflow description');
+                return;
+            }
+
+            const useLlm = document.getElementById('use-llm')?.checked || false;
+
+            await generateWorkflow({ prompt, use_llm: useLlm });
+        }
+
+        async function generateFromTemplate() {
+            if (!selectedTemplate) {
+                showError('Please select a template first');
+                return;
+            }
+
+            await generateWorkflow({ template: selectedTemplate });
+        }
+
+        async function generateWorkflow(data) {
+            showLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    showError(result.error);
+                    return;
+                }
+
+                currentWorkflow = result.workflow;
+                displayWorkflow(result);
+
+            } catch (error) {
+                showError('Failed to generate workflow: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayWorkflow(result) {
+            document.getElementById('workflow-json').textContent = JSON.stringify(result.workflow, null, 2);
+            document.getElementById('node-count').textContent = `Nodes: ${result.node_count}`;
+            document.getElementById('method-used').textContent = `Method: ${result.method}`;
+            document.getElementById('download-btn').disabled = false;
+
+            // Show success banner briefly
+            const banner = document.getElementById('success-banner');
+            banner.classList.add('active');
+            setTimeout(() => banner.classList.remove('active'), 3000);
+        }
+
+        async function downloadWorkflow() {
+            if (!currentWorkflow) return;
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ workflow: currentWorkflow })
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentWorkflow.name.replace(/\s+/g, '_')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+            } catch (error) {
+                showError('Failed to download: ' + error.message);
+            }
+        }
+
+        function copyToClipboard() {
+            const json = document.getElementById('workflow-json').textContent;
+            navigator.clipboard.writeText(json).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = originalText, 2000);
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+            document.getElementById('output').style.display = show ? 'none' : 'block';
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
