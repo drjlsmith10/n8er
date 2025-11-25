@@ -8,8 +8,8 @@
 
 **Version:** 2.0.0-alpha
 **Status:** Open Source & Active Development
-**Current Cycle:** Cycle-02 (Complete)
-**Breakthrough:** Natural Language Workflow Generation
+**Current Cycle:** Phase 2 - Architecture Simplification
+**Focus:** Template-based workflow generation with keyword matching
 
 > 🌟 **Now Open Source!** We're building the future of AI-assisted workflow automation together. [Star us on GitHub](https://github.com/drjlsmith10/n8er) to follow our progress!
 
@@ -59,33 +59,48 @@ The orchestration layer that:
 
 ---
 
-## Capabilities
+## Current Capabilities
 
-### Current (v2.0.0-alpha) - Cycle-02
-- ✅ **Natural Language Understanding** - Parse plain English workflow descriptions (85% accuracy)
-- ✅ **Community Knowledge Base** - 9 real-world patterns from Reddit, YouTube, Twitter
-- ✅ **Enhanced Templates** - Production-ready workflows with error handling
-- ✅ **Error Solution Database** - 4 common errors with solutions
-- ✅ **Web Research Agent** - Automated community knowledge gathering
-- ✅ Parse n8n workflow schemas with circular dependency detection
-- ✅ Generate workflow JSON with auto-positioning
-- ✅ Validate node structure and dependencies
-- ✅ Automated testing framework (51 tests, 100% pass rate)
-- ✅ Multi-agent coordination framework (7 specialized agents)
+### What Works Well ✅
 
-### New in Cycle-02
-- 🆕 **"Describe workflows in plain English"** - e.g., "When webhook arrives, save to database and send Slack notification"
-- 🆕 **Pattern matching** - Automatically suggest best template based on description
-- 🆕 **Parameter extraction** - Detect URLs, emails, channels from prompts
-- 🆕 **Knowledge base** - Structured storage of community patterns, errors, best practices
-- 🆕 **5 new production templates** - Webhook→DB→Slack, Scheduled Sync with Retry, RSS→Social, Sheets CRM, Multi-API
+- **Workflow JSON Generation** - Produces valid n8n workflow JSON from templates
+- **Schema Validation** - Detects common JSON structure errors before n8n import
+- **5 Production-Ready Templates** - Webhook→DB→Slack, Scheduled Sync, RSS→Social, CRM, Multi-API
+- **Keyword Pattern Matching** - Matches prompts to templates using keyword scoring
+- **Auto Node Versioning** - Automatically uses correct typeVersions for n8n 1.60+
+- **Automated Testing** - 51 tests covering core functionality
 
-### Roadmap (Cycle-03)
-- 🔄 Complete NL → JSON workflow generation
-- 🔄 Workflow simulation and testing
-- 🔄 Expand knowledge base to 20+ patterns
-- 🔄 Optimization recommendations
-- 🔄 Web interface for workflow building
+### What's Experimental ⚠️
+
+- **Keyword-based prompt matching** (NOT natural language understanding)
+  - Works for prompts using expected keywords (~85% on test phrases)
+  - May not understand complex or novel descriptions
+  - Does NOT use AI/ML for semantic understanding
+- **Built-in sample patterns** (NOT scraped from community)
+  - 9 developer-curated workflow templates
+  - Labeled as coming from Reddit/YouTube/Twitter for categorization
+  - Actually created by Automata developers based on common patterns
+- **Multi-agent architecture** - Most agents provide placeholder functionality
+
+### What Requires Configuration 🔧
+
+- **Real n8n validation** - Requires running n8n instance with API key
+- **Web research** - Requires Reddit/YouTube/Twitter API keys for actual scraping
+- Set `ENABLE_WEB_RESEARCH=true` in .env to use real APIs
+
+### Known Limitations ❌
+
+- Agent system is over-engineered for current capabilities
+- Some agents (Tester, ProjectManager) return mock data only
+- Knowledge base contains built-in samples, not actual community data
+- NL parser is keyword matching, not semantic understanding
+
+### Roadmap
+
+- Simplify agent architecture (7 agents → 3)
+- Require explicit opt-in for simulation mode
+- Add real LLM integration for semantic prompt understanding
+- Expand node support to 50+ types
 
 ---
 

@@ -16,12 +16,14 @@ from skills.knowledge_base import KnowledgeBase
 
 class CommunityTemplateLibrary:
     """
-    Extended template library based on community knowledge.
+    Extended template library with production-ready workflow patterns.
 
-    Incorporates patterns learned from:
-    - Reddit r/n8n discussions
-    - YouTube n8n tutorials
-    - Twitter/X n8n community
+    NOTE: These are built-in sample templates curated by Automata developers.
+    They are NOT scraped from external sources. The patterns are based on
+    common n8n use cases and best practices.
+
+    For actual community-sourced patterns, configure API keys and enable
+    ENABLE_WEB_RESEARCH in .env.
     """
 
     def __init__(self, knowledge_base: Optional[KnowledgeBase] = None):
@@ -32,7 +34,7 @@ class CommunityTemplateLibrary:
     def webhook_database_slack() -> Dict:
         """
         Pattern: Webhook → Database → Slack Notification
-        Source: Reddit (156 upvotes)
+        Source: Automata built-in template
 
         Receive webhook, store in database, send Slack notification
         on success/error with proper error handling.
@@ -140,7 +142,7 @@ return [{ json: $json }];
     def scheduled_sync_with_retry() -> Dict:
         """
         Pattern: Scheduled Data Sync with Exponential Backoff Retry
-        Source: Reddit (203 upvotes)
+        Source: Automata built-in template
 
         Sync data between systems with proper retry logic and error handling.
         """
@@ -278,7 +280,7 @@ if (retryCount < maxRetries) {
     def rss_to_social() -> Dict:
         """
         Pattern: RSS to Social Media Automation
-        Source: YouTube (2,400 views)
+        Source: Automata built-in template
 
         Monitor RSS feed and automatically post to Twitter/LinkedIn.
         """
@@ -365,7 +367,7 @@ return [{ json: { text }}];
     def google_sheets_crm() -> Dict:
         """
         Pattern: Google Sheets CRM Automation
-        Source: YouTube (5,100 views)
+        Source: Automata built-in template
 
         Manage leads in Google Sheets with automated follow-ups.
         """
@@ -926,7 +928,7 @@ return [{
     def multi_api_aggregation() -> Dict:
         """
         Pattern: Multi-API Aggregation
-        Source: Reddit (178 upvotes)
+        Source: Automata built-in template
 
         Call multiple APIs in parallel, merge results, transform.
         """

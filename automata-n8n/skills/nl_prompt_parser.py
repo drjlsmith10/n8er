@@ -1,11 +1,26 @@
 """
-Natural Language Prompt Parser
+Keyword Pattern Matcher (formerly NLPromptParser)
 
-Converts natural language descriptions into n8n workflow specifications.
-Uses pattern matching and knowledge base to identify the best template/approach.
+Matches workflow descriptions to templates using keyword-based pattern matching.
+
+IMPORTANT: This is NOT natural language understanding. It uses simple keyword
+matching to identify triggers, actions, and suggest templates. It works well
+for predefined phrases but may not understand complex or novel descriptions.
+
+How it works:
+- Searches prompt for predefined keywords (e.g., "webhook", "email", "slack")
+- Counts matches to score trigger types and actions
+- Suggests templates based on keyword combinations
+- Does NOT use AI/ML or semantic understanding
+
+Limitations:
+- Only works well with prompts using expected keywords
+- Cannot understand context or nuance
+- May suggest wrong template for ambiguous descriptions
+- Accuracy depends on how closely prompt matches keyword patterns
 
 Author: Project Automata - Cycle 02
-Version: 2.0.0
+Version: 2.1.0 (Honest Naming Update)
 """
 
 import re
@@ -28,16 +43,27 @@ class ParsedIntent:
     matched_patterns: List[WorkflowPattern] = None
 
 
-class NLPromptParser:
+class KeywordPatternMatcher:
     """
-    Parses natural language workflow descriptions.
+    Matches workflow descriptions to templates using keyword patterns.
 
-    Capabilities:
-    - Identify trigger types (webhook, schedule, email, etc.)
-    - Extract actions (send email, save to database, etc.)
-    - Determine data flow pattern (simple, ETL, branching, etc.)
-    - Suggest best matching template
-    - Extract parameters (URLs, credentials, etc.)
+    NOTE: This is keyword matching, NOT natural language understanding.
+    It counts occurrences of predefined keywords to score matches.
+
+    What it does:
+    - Scans for trigger keywords (webhook, schedule, email, etc.)
+    - Scans for action keywords (send email, save to database, etc.)
+    - Suggests templates based on keyword combinations
+    - Extracts parameters using regex patterns
+
+    What it does NOT do:
+    - Understand context or meaning
+    - Handle synonyms or paraphrasing
+    - Learn from new phrases
+    - Provide semantic understanding
+
+    Accuracy: Works well for prompts using expected keywords (~85% on test set).
+    Novel or complex descriptions may not match correctly.
     """
 
     def __init__(self, knowledge_base: Optional[KnowledgeBase] = None):
@@ -332,22 +358,29 @@ class NLPromptParser:
         return name or "Generated Workflow"
 
 
+# Backwards compatibility alias
+NLPromptParser = KeywordPatternMatcher
+
+
 # Convenience functions
 def parse_prompt(prompt: str, kb: Optional[KnowledgeBase] = None) -> ParsedIntent:
-    """Parse a natural language prompt"""
-    parser = NLPromptParser(knowledge_base=kb)
-    return parser.parse(prompt)
+    """Match prompt to workflow intent using keyword patterns."""
+    matcher = KeywordPatternMatcher(knowledge_base=kb)
+    return matcher.parse(prompt)
 
 
 def prompt_to_spec(prompt: str, kb: Optional[KnowledgeBase] = None) -> Dict:
-    """Convert prompt to workflow specification"""
-    parser = NLPromptParser(knowledge_base=kb)
-    return parser.generate_workflow_spec(prompt)
+    """Convert prompt to workflow specification using keyword matching."""
+    matcher = KeywordPatternMatcher(knowledge_base=kb)
+    return matcher.generate_workflow_spec(prompt)
 
 
 if __name__ == "__main__":
-    # Test the parser
-    print("NL Prompt Parser v2.0")
+    # Test the keyword pattern matcher
+    print("Keyword Pattern Matcher v2.1")
+    print("=" * 70)
+    print("NOTE: This uses KEYWORD MATCHING, not AI/NLP understanding.")
+    print("      It works by counting occurrences of predefined keywords.")
     print("=" * 70)
 
     test_prompts = [
@@ -358,11 +391,11 @@ if __name__ == "__main__":
         "Call three different APIs, merge the results, and transform the data",
     ]
 
-    parser = NLPromptParser()
+    matcher = KeywordPatternMatcher()
 
     for prompt in test_prompts:
         print(f"\n📝 Prompt: {prompt}")
-        spec = parser.generate_workflow_spec(prompt)
+        spec = matcher.generate_workflow_spec(prompt)
         print(f"   ├─ Name: {spec['name']}")
         print(f"   ├─ Trigger: {spec['trigger']['type']}")
         print(f"   ├─ Actions: {', '.join([a['type'] for a in spec['actions']])}")

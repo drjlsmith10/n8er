@@ -18,13 +18,18 @@ from typing import Dict, List, Optional
 
 @dataclass
 class WorkflowPattern:
-    """Represents a learned workflow pattern from the community"""
+    """Represents a workflow pattern.
+
+    Patterns can be:
+    - Built-in: source='automata_builtin', source_url=None
+    - Learned: source='reddit'/'youtube'/etc, source_url=actual URL
+    """
 
     pattern_id: str
     name: str
     description: str
-    source: str  # reddit, youtube, twitter, github, etc.
-    source_url: str
+    source: str  # 'automata_builtin', 'reddit', 'youtube', 'twitter', 'github', etc.
+    source_url: Optional[str]  # None for builtin patterns, URL for learned patterns
     nodes_used: List[str]
     complexity: str  # low, medium, high
     use_cases: List[str]
@@ -32,6 +37,7 @@ class WorkflowPattern:
     best_practices: List[str] = None
     discovered_date: str = None
     popularity_score: int = 0  # upvotes, views, likes, etc.
+    builtin: bool = False  # True for built-in patterns
 
     def __post_init__(self):
         if self.discovered_date is None:
@@ -42,17 +48,23 @@ class WorkflowPattern:
 
 @dataclass
 class ErrorPattern:
-    """Represents a common error and its solution"""
+    """Represents a common error and its solution.
+
+    Patterns can be:
+    - Built-in: source='automata_builtin', source_url=None
+    - Learned: source='reddit'/etc, source_url=actual URL
+    """
 
     error_id: str
     error_type: str
     error_message: str
     context: str
     solution: str
-    source: str
-    source_url: str
+    source: str  # 'automata_builtin' or actual source name
+    source_url: Optional[str]  # None for builtin patterns
     nodes_affected: List[str]
     discovered_date: str = None
+    builtin: bool = False  # True for built-in patterns
 
     def __post_init__(self):
         if self.discovered_date is None:

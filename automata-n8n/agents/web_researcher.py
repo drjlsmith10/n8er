@@ -121,13 +121,14 @@ class WebResearcherAgent(BaseAgent):
         # SIMULATING Reddit research - using curated sample data
         # For production, integrate with Reddit API via WebSearch/WebFetch
 
-        # Common patterns from n8n Reddit community
+        # Built-in sample patterns (NOT from actual Reddit scraping)
+        # These are developer-curated examples based on common community patterns
         reddit_patterns = [
             {
                 "name": "Webhook → Database → Slack Notification",
                 "description": "Receive webhook, store in database, send Slack notification on success/error",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/example1",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.webhook",
                     "n8n-nodes-base.postgres",
@@ -148,8 +149,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "Scheduled Data Sync with Retry",
                 "description": "Sync data between systems on schedule with exponential backoff retry",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/example2",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.cron",
                     "n8n-nodes-base.httpRequest",
@@ -170,8 +171,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "Multi-API Aggregation",
                 "description": "Call multiple APIs in parallel, merge results, transform and output",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/example3",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.manualTrigger",
                     "n8n-nodes-base.httpRequest",
@@ -193,8 +194,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "Email Processing Pipeline",
                 "description": "Monitor email, parse attachments, process data, send results",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/example4",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.emailTrigger",
                     "n8n-nodes-base.emailReadImap",
@@ -215,15 +216,16 @@ class WebResearcherAgent(BaseAgent):
             },
         ]
 
-        # Common errors from Reddit discussions
+        # Built-in error patterns (NOT from actual Reddit scraping)
+        # These are developer-curated examples based on common community issues
         reddit_errors = [
             {
                 "error_type": "Webhook timeout",
                 "error_message": "Webhook request timed out",
                 "context": "Long-running workflow triggered by webhook",
                 "solution": "Set webhook to 'Respond Immediately' and process asynchronously. Use Queue node for long operations.",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/error1",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_affected": ["n8n-nodes-base.webhook"],
             },
             {
@@ -231,8 +233,8 @@ class WebResearcherAgent(BaseAgent):
                 "error_message": "JavaScript heap out of memory",
                 "context": "Processing large datasets in Function node",
                 "solution": "Split data into batches using SplitInBatches node. Process smaller chunks instead of entire dataset.",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/error2",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_affected": ["n8n-nodes-base.function", "n8n-nodes-base.code"],
             },
             {
@@ -240,8 +242,8 @@ class WebResearcherAgent(BaseAgent):
                 "error_message": "429 Too Many Requests",
                 "context": "Making rapid API calls in loop",
                 "solution": "Add Wait node between iterations. Use rate limiter pattern with counter and delay.",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/error3",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_affected": ["n8n-nodes-base.httpRequest"],
             },
             {
@@ -249,8 +251,8 @@ class WebResearcherAgent(BaseAgent):
                 "error_message": "Could not find credentials",
                 "context": "Workflow imported from another instance",
                 "solution": "Re-create credentials in new instance. Cannot export actual credentials for security.",
-                "source": "reddit",
-                "source_url": "https://reddit.com/r/n8n/comments/error4",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_affected": ["*"],
             },
         ]
@@ -307,13 +309,14 @@ class WebResearcherAgent(BaseAgent):
         insights_found = 0
         findings = []
 
-        # Common patterns from YouTube tutorials
+        # Built-in sample patterns (NOT from actual YouTube scraping)
+        # These are developer-curated examples based on common tutorial patterns
         youtube_patterns = [
             {
                 "name": "RSS to Social Media Automation",
                 "description": "Monitor RSS feed, post new items to Twitter/LinkedIn automatically",
-                "source": "youtube",
-                "source_url": "https://youtube.com/watch?v=example1",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.rssFeedTrigger",
                     "n8n-nodes-base.function",
@@ -334,8 +337,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "GitHub to Discord Notifications",
                 "description": "Send Discord notifications for GitHub events (PR, issues, commits)",
-                "source": "youtube",
-                "source_url": "https://youtube.com/watch?v=example2",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.githubTrigger",
                     "n8n-nodes-base.switch",
@@ -356,8 +359,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "Google Sheets CRM Automation",
                 "description": "Add new leads to Google Sheets, send follow-up emails, update status",
-                "source": "youtube",
-                "source_url": "https://youtube.com/watch?v=example3",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.googleSheets",
                     "n8n-nodes-base.emailSend",
@@ -477,13 +480,14 @@ class WebResearcherAgent(BaseAgent):
         tips_found = 0
         findings = []
 
-        # Common patterns from Twitter
+        # Built-in sample patterns (NOT from actual Twitter scraping)
+        # These are developer-curated examples based on common use cases
         twitter_patterns = [
             {
                 "name": "Twitter Monitoring & Auto-Reply",
                 "description": "Monitor mentions, analyze sentiment, auto-reply based on content",
-                "source": "twitter",
-                "source_url": "https://twitter.com/n8n_io/status/example1",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.twitterTrigger",
                     "n8n-nodes-base.sentimentAnalysis",
@@ -504,8 +508,8 @@ class WebResearcherAgent(BaseAgent):
             {
                 "name": "Airtable → Multiple Platforms Sync",
                 "description": "Update Airtable, sync to Notion, Google Sheets, and Slack",
-                "source": "twitter",
-                "source_url": "https://twitter.com/user/status/example2",
+                "source": "automata_builtin",
+                "source_url": None,  # No real source - this is a built-in sample
                 "nodes_used": [
                     "n8n-nodes-base.airtableTrigger",
                     "n8n-nodes-base.notion",
