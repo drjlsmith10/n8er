@@ -1,11 +1,25 @@
 """
 Project Automata: Agent Framework
 
-Base classes and utilities for the multi-agent system.
+Base classes and utilities for the simplified multi-agent system.
+
+Simplified Architecture (v2.2.0):
+- KnowledgeAgent: Research and knowledge base management (agents.knowledge)
+- BuilderAgent: Code and documentation generation (agents.builder)
+- ValidatorAgent: Workflow validation (agents.validator)
+
+Deprecated agents (shims for backwards compatibility):
+- ResearcherAgent → use KnowledgeAgent
+- WebResearcherAgent → use KnowledgeAgent
+- EngineerAgent → use BuilderAgent
+- DocumenterAgent → use BuilderAgent
+- TesterAgent → REMOVED (was mock-only)
+- ProjectManagerAgent → REMOVED (was mock-only)
 
 Author: Project Automata
-Version: 1.0.0
+Version: 2.2.0 (Architecture Simplification)
 Created: 2025-11-08
+Updated: 2025-11-25
 """
 
 import logging

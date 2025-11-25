@@ -2,11 +2,11 @@
 """
 Run Web Research - Execute knowledge gathering from community sources
 
-This script coordinates the WebResearcherAgent to gather n8n workflows,
+This script coordinates the KnowledgeAgent to gather n8n workflows,
 error patterns, and best practices from Reddit, YouTube, and Twitter.
 
 Author: Project Automata - Cycle 02
-Version: 2.0.0
+Version: 2.2.0 (Architecture Simplification)
 """
 
 import os
@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agents import AgentTask
-from agents.web_researcher import WebResearcherAgent
+from agents.knowledge import KnowledgeAgent
 from skills.knowledge_base import KnowledgeBase
 
 
@@ -24,38 +24,34 @@ def main():
     """Execute web research across all sources"""
 
     print("=" * 70)
-    print("PROJECT AUTOMATA - WEB RESEARCH PHASE")
-    print("Cycle-02: Community Knowledge Gathering")
+    print("PROJECT AUTOMATA - KNOWLEDGE GATHERING")
+    print("Cycle-02: Community Knowledge Research")
     print("=" * 70)
     print()
 
     # Check if running in simulation mode
     from config import Config
 
-    if not Config.ENABLE_WEB_RESEARCH:
-        print("⚠️" * 35)
+    allow_simulated = Config.ALLOW_SIMULATED_DATA
+
+    if allow_simulated:
+        print("-" * 70)
+        print("SIMULATION MODE ENABLED (ALLOW_SIMULATED_DATA=true)")
+        print("-" * 70)
         print()
-        print("   🔴 SIMULATION MODE ACTIVE 🔴")
+        print("Using built-in sample patterns (developer-curated, not from APIs)")
+        print("To use real API data, configure API keys and set flags in .env")
         print()
-        print("   All data is SIMULATED - not from real API calls")
-        print("   This uses curated sample data for development/testing")
-        print()
-        print("   To use REAL data from APIs:")
-        print("   1. Set API keys in .env file")
-        print("   2. Set ENABLE_WEB_RESEARCH=true")
-        print()
-        print("⚠️" * 35)
+        print("-" * 70)
         print()
 
     # Initialize knowledge base and agent
     kb = KnowledgeBase()
-    agent = WebResearcherAgent(knowledge_base=kb)
+    agent = KnowledgeAgent(knowledge_base=kb)
 
     print(f"📚 Knowledge Base: {kb.base_dir}")
     print(f"🤖 Agent: {agent.name}")
-    print(
-        f"🔧 Mode: {'SIMULATION (Sample Data)' if not Config.ENABLE_WEB_RESEARCH else 'PRODUCTION (Real APIs)'}"
-    )
+    print(f"🔧 Mode: {'SIMULATION (Sample Data)' if allow_simulated else 'PRODUCTION (Real APIs)'}")
     print()
 
     # Phase 1: Reddit Research

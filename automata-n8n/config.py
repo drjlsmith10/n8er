@@ -60,6 +60,10 @@ class Config:
     ENABLE_CACHING: bool = os.getenv("ENABLE_CACHING", "true").lower() == "true"
     ENABLE_METRICS: bool = os.getenv("ENABLE_METRICS", "false").lower() == "true"
 
+    # Simulation Mode - MUST be explicitly enabled to use built-in sample data
+    # When False (default), APIs must be configured or operations will fail
+    ALLOW_SIMULATED_DATA: bool = os.getenv("ALLOW_SIMULATED_DATA", "false").lower() == "true"
+
     # Workflow Size Limits
     MAX_WORKFLOW_NODES: int = int(os.getenv("MAX_WORKFLOW_NODES", "100"))
     MAX_WORKFLOW_COMPLEXITY: int = int(

@@ -516,8 +516,8 @@ Build simple web UI for workflow generation.
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
 | Phase 1 | 9 | 9 | **COMPLETE** (2025-11-25) |
-| Phase 2 | 9 | 0 | Ready to Start |
-| Phase 3 | 3 | 0 | Blocked by Phase 2 |
+| Phase 2 | 9 | 9 | **COMPLETE** (2025-11-25) |
+| Phase 3 | 3 | 0 | Ready to Start |
 
 ### Phase 1 Completion Notes
 
@@ -529,6 +529,24 @@ All 9 tasks completed:
 - Task 1.7: n8n already pinned to 1.60.1
 - Task 1.8: Integration tests already comprehensive
 - Task 1.9: Added auto-detection of typeVersion in WorkflowBuilder
+
+### Phase 2 Completion Notes
+
+All 9 tasks completed:
+- Task 2.1: Removed all fake source URLs, replaced with `automata_builtin`
+- Task 2.2: Created builtin/ and learned/ directories, updated dataclasses
+- Task 2.3: Added ALLOW_SIMULATED_DATA config, SimulationModeError exception
+- Task 2.4: Created KnowledgeAgent consolidating ResearcherAgent + WebResearcherAgent
+- Task 2.5: Created BuilderAgent consolidating EngineerAgent + DocumenterAgent
+- Task 2.6: Removed TesterAgent and ProjectManagerAgent (mock-only)
+- Task 2.7: Integrated N8nApiClient into ValidatorAgent for real validation
+- Task 2.8: Renamed NLPromptParser to KeywordPatternMatcher with honest docs
+- Task 2.9: Updated README with honest capability documentation
+
+Architecture simplified from 7 agents to 3:
+- KnowledgeAgent (research + knowledge base)
+- BuilderAgent (code + documentation)
+- ValidatorAgent (schema + n8n validation)
 
 ---
 
