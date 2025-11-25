@@ -21,6 +21,15 @@ from typing import Dict, List, Optional, Tuple
 # Add parent directory to path for config imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Import node version mapping for auto-detection
+try:
+    from skills.n8n_node_versions import get_node_version as _get_node_version
+    HAS_NODE_VERSIONS = True
+except ImportError:
+    HAS_NODE_VERSIONS = False
+    def _get_node_version(node_type: str, use_latest: bool = True) -> float:
+        return 1.0  # Fallback to v1 if mapping unavailable
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -114,7 +123,7 @@ class WorkflowBuilder:
         parameters: Optional[Dict] = None,
         position: Optional[Tuple[int, int]] = None,
         credentials: Optional[Dict] = None,
-        type_version: int = 1,
+        type_version: Optional[int] = None,
         notes: str = "",
     ) -> "WorkflowBuilder":
         """
@@ -126,13 +135,13 @@ class WorkflowBuilder:
             parameters: Node configuration parameters
             position: Optional (x, y) position, auto-calculated if None
             credentials: Optional credential configuration
-            type_version: Node type version (default: 1)
+            type_version: Node type version (auto-detected from n8n_node_versions if None)
             notes: Optional notes/documentation
 
         Returns:
             Self for method chaining
 
-        Reasoning: Auto-positioning reduces boilerplate while maintaining flexibility
+        Reasoning: Auto-positioning and auto-version detection reduce boilerplate
         """
         # Ensure unique name
         if name in self.node_names:
@@ -149,6 +158,11 @@ class WorkflowBuilder:
         if position is None:
             position = (self.current_x, self.current_y)
             self.current_x += self.x_spacing
+
+        # Auto-detect typeVersion if not provided
+        if type_version is None:
+            type_version = int(_get_node_version(node_type))
+            logger.debug(f"Auto-detected typeVersion {type_version} for {node_type}")
 
         # Build node structure
         node = {

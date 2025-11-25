@@ -155,6 +155,7 @@ return [{ json: $json }];
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Fetch Source Data",
+            type_version=4,
             parameters={
                 "url": "https://api.source.com/data",
                 "method": "GET",
@@ -189,6 +190,7 @@ return transformed;
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Send to Destination",
+            type_version=4,
             parameters={
                 "url": "https://api.destination.com/data",
                 "method": "POST",
@@ -511,15 +513,19 @@ return [{ json: $json }];
         builder.add_node(
             "n8n-nodes-base.if",
             "Validate Input",
+            type_version=2,
             parameters={
                 "conditions": {
-                    "boolean": [],
-                    "string": [
+                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                    "conditions": [
                         {
-                            "value1": "={{ $json.action }}",
-                            "operation": "notEmpty"
+                            "id": "condition-validate-input",
+                            "leftValue": "={{ $json.action }}",
+                            "rightValue": "",
+                            "operator": {"type": "string", "operation": "notEmpty"},
                         }
-                    ]
+                    ],
+                    "combinator": "and",
                 }
             }
         )
@@ -643,15 +649,19 @@ try {
         builder.add_node(
             "n8n-nodes-base.if",
             "Check Valid",
+            type_version=2,
             parameters={
                 "conditions": {
-                    "boolean": [
+                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                    "conditions": [
                         {
-                            "value1": "={{ $json.error }}",
-                            "operation": "notEqual",
-                            "value2": True
+                            "id": "condition-check-valid",
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": True,
+                            "operator": {"type": "boolean", "operation": "notEquals"},
                         }
-                    ]
+                    ],
+                    "combinator": "and",
                 }
             }
         )
@@ -660,6 +670,7 @@ try {
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "API Call",
+            type_version=4,
             parameters={
                 "url": "https://api.example.com/process",
                 "method": "POST",
@@ -726,6 +737,7 @@ return [{
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "Log Error",
+            type_version=4,
             parameters={
                 "url": "https://logging.example.com/errors",
                 "method": "POST",
@@ -810,15 +822,19 @@ return [{
         builder.add_node(
             "n8n-nodes-base.if",
             "Is Circuit Open",
+            type_version=2,
             parameters={
                 "conditions": {
-                    "boolean": [
+                    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                    "conditions": [
                         {
-                            "value1": "={{ $json.circuit_open }}",
-                            "operation": "equal",
-                            "value2": True
+                            "id": "condition-circuit-open",
+                            "leftValue": "={{ $json.circuit_open }}",
+                            "rightValue": True,
+                            "operator": {"type": "boolean", "operation": "equals"},
                         }
-                    ]
+                    ],
+                    "combinator": "and",
                 }
             }
         )
@@ -827,6 +843,7 @@ return [{
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "External API",
+            type_version=4,
             parameters={
                 "url": "https://api.example.com/data",
                 "method": "GET",
@@ -922,6 +939,7 @@ return [{
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "API 1",
+            type_version=4,
             parameters={
                 "url": "https://api1.example.com/data",
                 "method": "GET",
@@ -933,6 +951,7 @@ return [{
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "API 2",
+            type_version=4,
             parameters={
                 "url": "https://api2.example.com/data",
                 "method": "GET",
@@ -944,6 +963,7 @@ return [{
         builder.add_node(
             "n8n-nodes-base.httpRequest",
             "API 3",
+            type_version=4,
             parameters={
                 "url": "https://api3.example.com/data",
                 "method": "GET",
