@@ -1,246 +1,210 @@
-# Project Automata: Autonomous n8n Workflow Builder
+# Project Automata: n8n Workflow Generator
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![CI/CD](https://github.com/drjlsmith10/n8er/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/drjlsmith10/n8er/actions)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Version:** 2.0.0-alpha
-**Status:** Open Source & Active Development
-**Current Cycle:** Phase 2 - Architecture Simplification
-**Focus:** Template-based workflow generation with keyword matching
+**Version:** 3.0.0
+**Status:** All 3 implementation phases complete
+**Nodes Supported:** 182 n8n node types
 
-> 🌟 **Now Open Source!** We're building the future of AI-assisted workflow automation together. [Star us on GitHub](https://github.com/drjlsmith10/n8er) to follow our progress!
-
----
-
-## Vision
-
-Project Automata is an autonomous R&D organization designed to build, test, and continuously improve the most capable AI-assisted n8n workflow generation system in existence. Through coordinated sub-agents and meta-learning loops, Automata achieves deeper reasoning, more rigorous validation, and cleaner code than traditional AI assistants.
-
-## Core Philosophy
-
-- **Autonomous Improvement:** Self-evaluating, self-critiquing, self-refining
-- **Multi-Agent Coordination:** Specialized agents working in concert
-- **Rigorous Validation:** Every output tested, validated, documented
-- **Transparent Reasoning:** All logic chains traceable and documented
-- **Continuous Learning:** Closed-loop improvement cycles
-
----
-
-## Architecture Overview
-
-```
-automata-n8n/
-├── agents/          # Individual AI agent scripts
-├── skills/          # Reusable tools and utilities
-├── workflows/       # Generated n8n workflow JSONs
-├── docs/            # Architecture, changelogs, reports
-└── tests/           # Automated validation suites
-```
-
-### Sub-Agents
-
-1. **Researcher** - Mines documentation, examples, patterns
-2. **Engineer** - Builds and refactors code modules
-3. **Validator** - Verifies schemas, syntax, dependencies
-4. **Tester** - Runs automated validation workflows
-5. **Documenter** - Generates guides, diagrams, reports
-6. **ProjectManager** - Oversees iteration planning
-
-### Meta-Controller: Automata-Prime
-
-The orchestration layer that:
-- Coordinates all sub-agents
-- Evaluates performance metrics
-- Generates improvement directives
-- Manages the learning loop
-
----
-
-## Current Capabilities
-
-### What Works Well ✅
-
-- **Workflow JSON Generation** - Produces valid n8n workflow JSON from templates
-- **Schema Validation** - Detects common JSON structure errors before n8n import
-- **5 Production-Ready Templates** - Webhook→DB→Slack, Scheduled Sync, RSS→Social, CRM, Multi-API
-- **Keyword Pattern Matching** - Matches prompts to templates using keyword scoring
-- **Auto Node Versioning** - Automatically uses correct typeVersions for n8n 1.60+
-- **Automated Testing** - 51 tests covering core functionality
-
-### What's Experimental ⚠️
-
-- **Keyword-based prompt matching** (NOT natural language understanding)
-  - Works for prompts using expected keywords (~85% on test phrases)
-  - May not understand complex or novel descriptions
-  - Does NOT use AI/ML for semantic understanding
-- **Built-in sample patterns** (NOT scraped from community)
-  - 9 developer-curated workflow templates
-  - Labeled as coming from Reddit/YouTube/Twitter for categorization
-  - Actually created by Automata developers based on common patterns
-- **Multi-agent architecture** - Most agents provide placeholder functionality
-
-### What Requires Configuration 🔧
-
-- **Real n8n validation** - Requires running n8n instance with API key
-- **Web research** - Requires Reddit/YouTube/Twitter API keys for actual scraping
-- Set `ENABLE_WEB_RESEARCH=true` in .env to use real APIs
-
-### Known Limitations ❌
-
-- Agent system is over-engineered for current capabilities
-- Some agents (Tester, ProjectManager) return mock data only
-- Knowledge base contains built-in samples, not actual community data
-- NL parser is keyword matching, not semantic understanding
-
-### Roadmap
-
-- Simplify agent architecture (7 agents → 3)
-- Require explicit opt-in for simulation mode
-- Add real LLM integration for semantic prompt understanding
-- Expand node support to 50+ types
+Generate n8n workflows from natural language prompts or templates.
 
 ---
 
 ## Quick Start
 
-### Requirements
-
-- **Python:** 3.11.9 or higher (tested on 3.11.9, compatible with 3.9-3.12)
-- **Docker:** Optional for containerized deployment
-- **n8n:** v1.60.0+ **REQUIRED** (Recommended: v1.60.1)
-  - ⚠️ **Critical:** Generated workflows use modern node typeVersions optimized for n8n 1.60.0+
-  - See `docs/n8n_compatibility_matrix.md` for detailed version requirements
-  - Older versions (< 1.60.0) may have incompatible node typeVersions
-
-### Installation
-
 ```bash
-# Clone repository
-git clone https://github.com/drjlsmith10/n8er.git
-cd n8er/automata-n8n
-
-# Install package and dependencies
-pip install -e ".[dev]"
-
-# Or just dependencies
+# 1. Install dependencies
+cd automata-n8n
 pip install -r requirements.txt
+pip install flask
+
+# 2. Start the web interface
+python web/app.py
+
+# 3. Open browser
+open http://localhost:5000
 ```
 
-### Configuration
+That's it! You can now:
+- Type a workflow description and click "Generate Workflow"
+- Or select a template and click "Use Selected Template"
+- Download the JSON and import it into n8n
+
+---
+
+## Features
+
+### Web Interface
+- Natural language workflow generation
+- 12 built-in templates
+- Live JSON preview
+- One-click download
+
+### 182 Node Types Supported
+- Triggers: Webhook, Cron, Email, RSS, Form
+- Communication: Slack, Discord, Telegram, Teams, WhatsApp
+- Databases: PostgreSQL, MySQL, MongoDB, Supabase, Firebase
+- AI/ML: OpenAI, Anthropic, Groq, Mistral, Cohere
+- Cloud: AWS, Google Cloud, Vercel, Netlify
+- And 150+ more...
+
+### Optional LLM Integration
+Better understanding with AI (configure one):
+```bash
+export OPENAI_API_KEY=sk-your-key      # GPT-4
+export ANTHROPIC_API_KEY=sk-ant-key    # Claude
+# Or use local Ollama at http://localhost:11434
+```
+
+---
+
+## Usage
+
+### Option 1: Web Interface (Recommended)
 
 ```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit with your API keys (all free tiers available)
-nano .env
+python web/app.py
+# Open http://localhost:5000
 ```
 
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed setup instructions.
+### Option 2: Command Line
 
-### Generate a Workflow
+```python
+from skills.enhanced_templates import get_template_by_name
+
+# Generate from template
+workflow = get_template_by_name("webhook_db_slack")
+
+# Save to file
+import json
+with open("workflow.json", "w") as f:
+    json.dump(workflow, f, indent=2)
+```
+
+### Option 3: Custom Workflow
+
+```python
+from skills.generate_workflow_json import WorkflowBuilder
+
+builder = WorkflowBuilder("My Workflow")
+builder.add_trigger("webhook", "Start", parameters={"path": "my-hook"})
+builder.add_node("n8n-nodes-base.slack", "Notify", parameters={"channel": "#alerts"})
+builder.connect("Start", "Notify")
+
+workflow = builder.build()
+```
+
+---
+
+## Available Templates
+
+| Template | Description |
+|----------|-------------|
+| `webhook_db_slack` | Webhook → Database → Slack notification |
+| `scheduled_sync_retry` | Scheduled sync with retry logic |
+| `rss_social` | RSS feed → Social media posting |
+| `sheets_crm` | Google Sheets CRM automation |
+| `multi_api` | Multi-API aggregation |
+| `ai_content` | AI-powered content processing |
+| `ecommerce_orders` | E-commerce order handling |
+| `github_jira` | GitHub → Jira issue sync |
+| `cloud_backup` | Multi-cloud file backup |
+| `webhook_error_handling` | Comprehensive error handling |
+| `circuit_breaker` | Resilient API calls |
+| `webhook_advanced` | Advanced webhook responses |
+
+---
+
+## Importing to n8n
+
+1. Generate workflow in Automata
+2. Download or copy the JSON
+3. In n8n: **Workflows** → **Import from File**
+4. Select your JSON file
+5. Configure credentials for connected services
+6. Activate and run!
+
+**Note:** Workflows are compatible with n8n 1.60.0+
+
+---
+
+## Project Structure
+
+```
+automata-n8n/
+├── web/                 # Web interface (Flask)
+│   ├── app.py          # Main application
+│   └── templates/      # HTML templates
+├── agents/             # Simplified agent system (3 agents)
+│   ├── knowledge.py    # Research & knowledge base
+│   ├── builder.py      # Code & documentation
+│   └── validator.py    # Workflow validation
+├── skills/             # Core functionality
+│   ├── generate_workflow_json.py   # Workflow builder
+│   ├── enhanced_templates.py       # 12 templates
+│   ├── n8n_node_versions.py        # 182 node types
+│   ├── nl_prompt_parser.py         # Keyword matching
+│   └── llm_prompt_parser.py        # LLM integration
+├── docs/               # Documentation
+│   ├── USAGE_GUIDE.md  # Detailed usage guide
+│   └── IMPLEMENTATION_PLAN.md
+└── tests/              # Test suite
+```
+
+---
+
+## Configuration
+
+Create `.env` file (optional):
 
 ```bash
-python skills/generate_workflow_json.py --prompt "Send email when webhook receives data"
-```
+# LLM Provider (choose one)
+OPENAI_API_KEY=sk-your-key
+ANTHROPIC_API_KEY=sk-ant-your-key
+OLLAMA_HOST=http://localhost:11434
 
-### Run Tests
+# n8n API (for real validation)
+N8N_API_URL=http://localhost:5678
+N8N_API_KEY=your-api-key
 
-```bash
-pytest tests/
-# Run with verbose output
-pytest tests/ -v
-# Run specific test file
-pytest tests/test_workflow_generation.py
+# Enable simulation mode for sample data
+ALLOW_SIMULATED_DATA=false
 ```
 
 ---
 
-## Development Loop
+## Documentation
 
-```
-Identify Gap → Spawn Agent → Implement → Test → Document → Evaluate → Improve
-```
-
-Each cycle:
-1. Agent produces output
-2. Validator checks correctness
-3. Tester runs automated checks
-4. Documenter logs reasoning
-5. Automata-Prime evaluates and refines
+- **[Usage Guide](docs/USAGE_GUIDE.md)** - Detailed instructions
+- **[Implementation Plan](docs/IMPLEMENTATION_PLAN.md)** - Architecture details
 
 ---
 
-## Evaluation Metrics
+## Requirements
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Workflow schema validity | - | ≥90% |
-| Node dependency accuracy | - | ≥85% |
-| Code modularity | - | ≥85% |
-| Documentation coverage | - | 100% |
-| Test pass rate | - | ≥95% |
-
----
-
-## Contributing
-
-We welcome contributions from the community! Project Automata thrives on collaboration and continuous improvement.
-
-### Ways to Contribute
-
-- 🐛 **Report Bugs** - Found an issue? [Open a bug report](https://github.com/drjlsmith10/n8er/issues/new?template=bug_report.md)
-- 💡 **Suggest Features** - Have an idea? [Submit a feature request](https://github.com/drjlsmith10/n8er/issues/new?template=feature_request.md)
-- 🔧 **Submit Code** - Read our [Contributing Guidelines](CONTRIBUTING.md) and submit a PR
-- 📖 **Improve Docs** - Help make our documentation clearer
-- 🧪 **Share Workflows** - Contribute real-world n8n patterns to our knowledge base
-- 💬 **Help Others** - Answer questions in Discussions
-
-### Getting Started
-
-1. Read the [Contributing Guidelines](CONTRIBUTING.md)
-2. Check out [Good First Issues](https://github.com/drjlsmith10/n8er/labels/good%20first%20issue)
-3. Join our community discussions
-4. Follow our [Code of Conduct](CODE_OF_CONDUCT.md)
-
-### Development Process
-
-The system self-improves through meta-evaluation cycles documented in `docs/changelog.md` and `docs/eval_report.md`. Every contribution goes through:
-
-1. Automated testing (51+ tests)
-2. Code quality checks (Black, Flake8, mypy)
-3. Security scanning
-4. Community review
-
----
-
-## Community & Support
-
-- 📚 **Documentation**: [docs/](docs/)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/drjlsmith10/n8er/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/drjlsmith10/n8er/discussions)
-- 🔒 **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting
-
-### Show Your Support
-
-If Project Automata is useful to you:
-
-⭐ **Star this repository** to show your support
-🐦 **Share on Twitter** to help others discover it
-🤝 **Contribute** to make it even better
+- Python 3.9+
+- Flask (for web interface)
+- n8n 1.60.0+ (for importing workflows)
+- Optional: OpenAI, Anthropic, or Ollama for LLM features
 
 ---
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-## Contact
+## Quick Reference
 
-Project maintained by Automata-Prime
-Documentation auto-generated on: 2025-11-20
+| Action | Command |
+|--------|---------|
+| Start web UI | `python web/app.py` |
+| Generate template | `get_template_by_name("webhook_db_slack")` |
+| Count nodes | `len(NODE_TYPE_VERSIONS)` → 182 |
+| Check LLM | `get_available_provider()` |
+
+---
+
+*Project Automata v3.0.0 - All phases complete*
